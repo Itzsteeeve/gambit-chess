@@ -1,0 +1,700 @@
+/* ------------------------------------------------------------------ */
+/* Frame + surface                                                    */
+/* ------------------------------------------------------------------ */
+
+.board-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: var(--radius-sm);
+  background: var(--board-dark);
+}
+
+.board-surface {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--board-light);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Flip: the whole surface turns 180deg while every piece counter-rotates,
+   so pieces stay upright and visibly travel to their mirrored squares. */
+.board-surface.is-flipping {
+  transform: rotate(180deg);
+  transition: transform var(--dur-flip) var(--ease-in-out);
+}
+
+.board-surface.is-flipping .piece-art {
+  transform: rotate(-180deg);
+  transition: transform var(--dur-flip) var(--ease-in-out);
+}
+
+.board-surface.is-flipping .coord {
+  opacity: 0;
+}
+
+.board-surface.is-flip-settle .piece {
+  transition: none;
+}
+
+.board-grid {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  grid-template-rows: repeat(8, minmax(0, 1fr));
+}
+
+/* ------------------------------------------------------------------ */
+/* Squares                                                            */
+/* ------------------------------------------------------------------ */
+
+.square {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+}
+
+.square--light {
+  color: var(--coord-on-light);
+  background: var(--board-light);
+}
+
+.square--dark {
+  color: var(--coord-on-dark);
+  background: var(--board-dark);
+}
+
+.square.is-target {
+  cursor: pointer;
+}
+
+.square.is-own-piece {
+  cursor: grab;
+}
+
+.board-surface.is-dragging .square {
+  cursor: grabbing;
+}
+
+@media (hover: hover) {
+  .board-surface.is-interactive .square.is-own-piece:hover::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: rgb(255 255 255 / 0.08);
+    pointer-events: none;
+  }
+}
+
+/* Focus ring stays below .piece-layer (z 4) so it never covers the piece. */
+.square:focus-visible {
+  z-index: 3;
+  box-shadow: inset 0 0 0 3px var(--text-bright);
+}
+
+.square-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.square-overlay--last {
+  background: var(--board-last);
+}
+
+.square-overlay--selected {
+  background: var(--board-selected);
+}
+
+.square-overlay--check {
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgb(var(--danger-rgb) / 0.95) 0%,
+    rgb(var(--danger-rgb) / 0.6) 35%,
+    rgb(var(--danger-rgb) / 0) 72%
+  );
+}
+
+/* Hint: a static amber ring; one gentle opacity pulse, three times, then still. */
+.square-overlay--hint-source,
+.square-overlay--hint-target {
+  box-shadow: inset 0 0 0 4px var(--amber);
+  background: rgb(var(--amber-rgb) / 0.22);
+  animation: hint-pulse 1.2s var(--ease-in-out) 3;
+}
+
+.square-overlay--hint-target {
+  box-shadow: inset 0 0 0 3px rgb(var(--amber-rgb) / 0.85);
+  background: rgb(var(--amber-rgb) / 0.12);
+}
+
+@keyframes hint-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* Move hints */
+
+.move-dot {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.move-dot span {
+  width: 32%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--board-hint-dot);
+  animation: fade-in 120ms var(--ease-out) both;
+}
+
+.capture-ring {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 calc(var(--board-size) / 8 * 0.085) var(--board-hint-dot);
+  pointer-events: none;
+  animation: fade-in 120ms var(--ease-out) both;
+}
+
+.square.is-hovered-target::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  box-shadow: inset 0 0 0 calc(var(--board-size) / 8 * 0.05) rgb(255 255 255 / 0.55);
+  background: rgb(255 255 255 / 0.08);
+  pointer-events: none;
+}
+
+/* Coordinates: inside the edge squares, in the opposite square colour. */
+
+.coord {
+  position: absolute;
+  z-index: 2;
+  color: currentColor;
+  font-family: var(--font-ui);
+  font-size: clamp(11px, calc(var(--board-size) * 0.021), 15px);
+  font-weight: var(--fw-bold);
+  line-height: 1;
+  pointer-events: none;
+  transition: opacity 120ms var(--ease-out);
+}
+
+.coord--file {
+  right: 5%;
+  bottom: 4%;
+}
+
+.coord--rank {
+  top: 5%;
+  left: 5%;
+}
+
+/* ------------------------------------------------------------------ */
+/* Pieces                                                             */
+/* ------------------------------------------------------------------ */
+
+.piece-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.piece {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 12.5%;
+  height: 12.5%;
+  z-index: 1;
+  transform: translate3d(calc(var(--x) * 100%), calc(var(--y) * 100%), 0);
+  transition: transform var(--dur-move) var(--ease-move);
+  will-change: transform;
+}
+
+.piece.is-moving {
+  z-index: 6;
+}
+
+.piece-lift {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-origin: 50% 60%;
+  animation: piece-in 260ms var(--ease-out) backwards;
+  animation-delay: calc(var(--piece-index, 0) * 6ms);
+}
+
+.piece-art {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.22));
+}
+
+/* Knight: a subtle arc while it glides. */
+.piece.is-moving[data-piece-type='n'] .piece-lift {
+  animation: knight-arc var(--dur-move) var(--ease-move);
+}
+
+.piece.is-hint-source {
+  z-index: 5;
+}
+
+.piece.is-restored {
+  animation: piece-restore 200ms var(--ease-out) both;
+}
+
+.piece.is-dragging {
+  z-index: 30;
+  transition: none;
+}
+
+.piece.is-dragging .piece-lift {
+  animation: none;
+}
+
+.piece.is-dragging .piece-art {
+  filter: drop-shadow(0 8px 8px rgb(0 0 0 / 0.3));
+}
+
+.piece.is-promoted .piece-lift {
+  animation: promote-pop 260ms var(--ease-out);
+}
+
+.piece.is-mated .piece-lift {
+  transform: rotate(-8deg) translateY(3%);
+  transition: transform 300ms var(--ease-out);
+}
+
+@keyframes piece-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes knight-arc {
+  0%,
+  100% {
+    transform: none;
+  }
+  50% {
+    transform: translateY(-6%) scale(1.03);
+  }
+}
+
+@keyframes piece-restore {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes promote-pop {
+  0% {
+    transform: scale(0.7);
+  }
+  60% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Capture ghost: a quick pop that finishes as the mover lands        */
+/* ------------------------------------------------------------------ */
+
+.capture-ghost-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.capture-ghost {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 12.5%;
+  height: 12.5%;
+  transform: translate3d(calc(var(--x) * 100%), calc(var(--y) * 100%), 0);
+}
+
+.capture-ghost .piece-art {
+  animation: capture-pop 120ms var(--ease-out) forwards;
+  animation-delay: calc(var(--dur-move) - 120ms);
+}
+
+@keyframes capture-pop {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.18);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Promotion                                                          */
+/* ------------------------------------------------------------------ */
+
+.promotion-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  background: rgb(0 0 0 / 0.35);
+  animation: fade-in 120ms var(--ease-out) both;
+}
+
+.promotion-picker {
+  position: absolute;
+  z-index: 2;
+  width: 12.5%;
+  min-width: 40px;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  box-shadow: var(--shadow-pop);
+  transform-origin: top center;
+  animation: promo-in 150ms var(--ease-out) both;
+}
+
+.promotion-picker--up {
+  transform-origin: bottom center;
+}
+
+.promotion-options {
+  display: flex;
+  flex-direction: column;
+}
+
+.promotion-picker--up .promotion-options {
+  flex-direction: column-reverse;
+}
+
+.promotion-option {
+  position: relative;
+  display: grid;
+  width: 100%;
+  aspect-ratio: 1;
+  place-items: center;
+  background: transparent;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+}
+
+.promotion-option:hover {
+  background: var(--surface-3);
+}
+
+.promotion-option:active {
+  transform: scale(0.95);
+}
+
+.promotion-option:focus-visible {
+  z-index: 1;
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--primary);
+}
+
+.promotion-option .piece-art {
+  width: 86%;
+  height: 86%;
+}
+
+.promotion-key {
+  position: absolute;
+  top: 4px;
+  left: 5px;
+  z-index: 1;
+  color: var(--faint);
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  line-height: 1;
+}
+
+@keyframes promo-in {
+  from {
+    opacity: 0;
+    transform: scaleY(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.board-inactive-shade {
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  background: rgb(0 0 0 / 0.12);
+  pointer-events: none;
+  animation: fade-in 200ms var(--ease-out) both;
+}
+
+/* ------------------------------------------------------------------ */
+/* Eval bar                                                           */
+/* ------------------------------------------------------------------ */
+
+.eval-bar {
+  position: relative;
+  width: var(--eval-w);
+  flex: 0 0 var(--eval-w);
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--ink-soft);
+  user-select: none;
+}
+
+.eval-bar-fill {
+  position: absolute;
+  inset: 0;
+  background: var(--ivory);
+  transform: scaleY(var(--eval-share, 0.5));
+  transform-origin: bottom;
+  transition: transform 400ms var(--ease-out);
+}
+
+.eval-bar[data-white='top'] .eval-bar-fill {
+  transform-origin: top;
+}
+
+.eval-bar-mid {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  height: 1px;
+  background: rgb(128 128 128 / 0.45);
+  pointer-events: none;
+}
+
+.eval-bar-value {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: var(--fw-bold);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  text-align: center;
+  pointer-events: none;
+}
+
+.eval-bar[data-lead='white'][data-white='bottom'] .eval-bar-value,
+.eval-bar[data-lead='black'][data-white='top'] .eval-bar-value {
+  bottom: var(--space-1);
+}
+
+.eval-bar[data-lead='white'][data-white='top'] .eval-bar-value,
+.eval-bar[data-lead='black'][data-white='bottom'] .eval-bar-value {
+  top: var(--space-1);
+}
+
+.eval-bar[data-lead='black'] .eval-bar-value {
+  color: var(--ivory);
+}
+
+.eval-bar.is-off .eval-bar-fill,
+.eval-bar.is-off .eval-bar-value,
+.eval-bar.is-off .eval-bar-mid {
+  display: none;
+}
+
+/* Off (local game): an invisible spacer that keeps the column aligned. */
+.eval-bar.is-off:not(.is-error) {
+  background: transparent;
+}
+
+.eval-bar.is-error {
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px rgb(var(--danger-rgb) / 0.5);
+}
+
+/* ------------------------------------------------------------------ */
+/* Rating badge on the destination square                             */
+/* ------------------------------------------------------------------ */
+
+.board-rating-badge-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 25;
+  width: 12.5%;
+  height: 12.5%;
+  transform: translate3d(calc(var(--x) * 100%), calc(var(--y) * 100%), 0);
+  pointer-events: none;
+}
+
+.board-rating-badge {
+  position: absolute;
+  top: -10%;
+  right: -10%;
+  display: flex;
+  width: 42%;
+  aspect-ratio: 1;
+  align-items: center;
+  justify-content: center;
+  animation: badge-pop 200ms var(--ease-out) both;
+  animation-delay: 80ms;
+}
+
+.board-surface.is-flipping .board-rating-badge {
+  transform: rotate(-180deg);
+}
+
+@keyframes badge-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Hint arrow                                                         */
+/* ------------------------------------------------------------------ */
+
+.board-arrow-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  animation: fade-in 160ms var(--ease-out) both;
+}
+
+.board-arrow-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.board-arrow-layer {
+  animation: none;
+}
+
+.board-arrow {
+  --tone: var(--primary-rgb);
+  animation: fade-in 120ms var(--ease-out) both;
+}
+
+.board-arrow-shaft {
+  fill: none;
+  stroke: rgb(var(--tone) / 0.82);
+}
+
+.board-arrow-head {
+  fill: rgb(var(--tone) / 0.88);
+}
+
+.board-tone--green {
+  --tone: var(--primary-rgb);
+}
+
+.board-tone--red {
+  --tone: var(--danger-rgb);
+}
+
+.board-tone--amber {
+  --tone: var(--amber-rgb);
+}
+
+.board-tone--blue {
+  --tone: var(--premove-rgb);
+}
+
+/* The arrow being drawn is lighter until it is dropped. */
+.board-arrow--drawing {
+  opacity: 0.6;
+  animation: none;
+}
+
+/* Best move in review: slimmer feel through lower opacity. */
+.board-arrow--best .board-arrow-shaft {
+  stroke: rgb(var(--tone) / 0.7);
+}
+
+.board-mark {
+  --tone: var(--primary-rgb);
+  fill: none;
+  stroke: rgb(var(--tone) / 0.85);
+  stroke-width: 7;
+  animation: fade-in 120ms var(--ease-out) both;
+}
+
+/* ------------------------------------------------------------------ */
+/* Premove + drag preview                                             */
+/* ------------------------------------------------------------------ */
+
+.square-overlay--premove {
+  background: rgb(var(--premove-rgb) / 0.38);
+}
+
+.square.is-premove-target .move-dot span {
+  background: rgb(var(--premove-rgb) / 0.45);
+}
+
+.square.is-premove-target .capture-ring {
+  box-shadow: inset 0 0 0 calc(var(--board-size) / 8 * 0.085) rgb(var(--premove-rgb) / 0.45);
+}
+
+/* Dragging over a square the piece cannot reach: a quiet dim, nothing more. */
+.square.is-hovered-illegal::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: rgb(0 0 0 / 0.12);
+  pointer-events: none;
+}
+
+/* Review: the board reads as "not live" without dimming the position. */
+.board-frame[data-reviewing] {
+  box-shadow: 0 0 0 2px var(--line-strong);
+}

@@ -1,0 +1,245 @@
+/* ==================================================================
+   Three breakpoints: 1180 (compact desktop), 760 (phone), 520 (small phone).
+   Portrait tablets below 1180 stack like phones. Most sizing is token-driven,
+   so breakpoints mostly re-assign tokens.
+   ================================================================== */
+
+/* -------------------- <= 1180: compact desktop -------------------- */
+@media (max-width: 1180px) {
+  :root {
+    --sidebar-w: 320px;
+    --col-gap: 16px;
+    --page-pad-x: 16px;
+  }
+}
+
+/* --------- stacked layout: portrait tablets and all phones --------- */
+@media (max-width: 1180px) and (orientation: portrait), (max-width: 760px) {
+  :root {
+    --sidebar-w: 0px;
+    --col-gap: 0px;
+    /* Height cap only matters on short landscape phones; width rules here. */
+    --board-size: max(240px, min(var(--board-by-width), var(--board-by-height), var(--board-max)));
+  }
+
+  .app-main {
+    height: auto;
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    gap: var(--space-4);
+  }
+
+  .side-panel {
+    width: calc(var(--board-size) + var(--eval-w) + var(--eval-gap));
+    max-width: 100%;
+    height: clamp(420px, 60dvh, 640px);
+  }
+
+  .play-stage {
+    width: 100%;
+  }
+
+  .app-main--home {
+    min-height: calc(100dvh - var(--header-h));
+    align-content: center;
+  }
+
+  .start-screen {
+    width: min(100%, 480px);
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-6);
+  }
+
+  .start-preview {
+    max-width: min(100%, 420px, 46dvh);
+    justify-self: center;
+  }
+}
+
+/* --------------------------- <= 760: phone ------------------------- */
+@media (max-width: 760px) {
+  :root {
+    --header-h: 52px;
+    --page-pad-x: 12px;
+    --page-pad-y: 12px;
+    --strip-h: 44px;
+    --toolbar-h: 40px;
+    --stage-gap: 4px;
+    --eval-w: 16px;
+    --eval-gap: 6px;
+  }
+
+  .header-inner {
+    gap: var(--space-2);
+  }
+
+  .brand-name,
+  .header-divider,
+  .header-mode,
+  .level-trigger-label,
+  .level-trigger-name {
+    display: none;
+  }
+
+  .level-trigger {
+    padding: 0 var(--space-2);
+    background: var(--surface-2);
+  }
+
+  .level-popover {
+    position: fixed;
+    top: calc(var(--header-h) + 4px);
+    right: var(--space-2);
+    left: var(--space-2);
+    width: auto;
+  }
+
+  .header-actions {
+    gap: 0;
+  }
+
+  .new-game-button {
+    width: var(--control-sm);
+    margin-left: var(--space-1);
+    padding: 0;
+  }
+
+  .new-game-button span {
+    display: none;
+  }
+
+  .player-avatar {
+    width: 32px;
+    height: 32px;
+  }
+
+  .player-clock {
+    min-width: 76px;
+    height: 32px;
+    padding: 0 var(--space-2);
+    font-size: var(--fs-md);
+  }
+
+  .player-status--active:not(:has(.thinking-dots)),
+  .player-status--over {
+    display: none;
+  }
+
+  .toolbar-text-button,
+  .toolbar-result-button {
+    width: var(--control-md);
+    padding: 0;
+  }
+
+  .review-bar .icon-button {
+    width: var(--control-sm);
+  }
+
+  .start-title {
+    font-size: var(--fs-lg);
+  }
+
+  .toolbar-text-button span,
+  .toolbar-result-button span {
+    display: none;
+  }
+
+  .eval-bar-value {
+    display: none;
+  }
+
+  .toast-region {
+    bottom: var(--space-4);
+  }
+
+  .modal-backdrop {
+    padding: var(--space-3);
+    align-items: flex-end;
+  }
+
+  .modal-panel {
+    max-height: calc(100dvh - 24px);
+  }
+
+  .modal-head {
+    padding: var(--space-4) var(--space-4) var(--space-3);
+  }
+
+  .modal-body {
+    padding: 0 var(--space-4) var(--space-4);
+  }
+
+  .modal-footer {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .result-stage {
+    height: 100px;
+  }
+
+  .result-king {
+    width: 80px;
+    height: 80px;
+  }
+}
+
+/* ----------------------- <= 520: small phone ----------------------- */
+@media (max-width: 520px) {
+  :root {
+    --page-pad-x: 8px;
+    --eval-w: 12px;
+    --eval-gap: 4px;
+  }
+
+  .header-inner {
+    padding: 0 var(--space-2);
+  }
+
+  .player-strip {
+    gap: var(--space-2);
+  }
+
+  .toolbar-divider {
+    margin: 0;
+  }
+
+  .side-tab svg {
+    display: none;
+  }
+
+  .modal-footer .button {
+    flex: 1 1 auto;
+  }
+
+  .settings-footnote {
+    flex-basis: 100%;
+  }
+
+  .footer-spacer {
+    display: none;
+  }
+
+  .result-modal .modal-footer .text-action {
+    width: 100%;
+    order: 3;
+    justify-content: center;
+  }
+
+  .result-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: var(--space-3);
+  }
+
+  .result-stats > div:nth-child(3) {
+    border-left: 0;
+  }
+
+  .new-game-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .review-bar-rating,
+  .review-bar-best {
+    display: none;
+  }
+}

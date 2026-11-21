@@ -1,0 +1,207 @@
+/* ==================================================================
+   Gambit design tokens
+   One warm-neutral shell, one green, one gold (rare), one amber (hints),
+   one red (danger). Everything else is derived with color-mix().
+   ================================================================== */
+
+:root {
+  /* Typography ---------------------------------------------------- */
+  --font-ui: 'Inter Variable', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: var(--font-ui);
+  --font-brand: 'Space Grotesk Variable', 'Space Grotesk', var(--font-ui);
+  --font-mono: ui-monospace, 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+
+  --fs-xs: 12px; /* meta, captions, column headers */
+  --fs-sm: 13px; /* body / controls */
+  --fs-md: 15px; /* emphasis, section titles */
+  --fs-lg: 20px; /* dialog titles, clocks */
+  --fs-xl: 28px; /* display numbers */
+  --fs-2xl: 40px; /* hero numbers */
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  /* Shell (one warm-neutral hue family, ~40deg) ------------------- */
+  --bg: #1b1a18;
+  --surface: #262522;
+  --surface-2: #2e2c29;
+  --surface-3: #383633;
+  --line: #34322e;
+  --line-strong: #4a4743;
+
+  --text-bright: #ffffff;
+  --text: #ecebe7;
+  --text-soft: #c8c6c0;
+  --muted: #9b9891;
+  --faint: #6f6c66;
+
+  /* Piece-colour neutrals (clock, eval bar, avatars) */
+  --ivory: #f4f3ef;
+  --ink: #1b1a18;
+  --ink-soft: #403d39;
+
+  /* Accents -------------------------------------------------------- */
+  --primary-rgb: 129 182 76;
+  --primary: rgb(var(--primary-rgb)); /* #81b64c */
+  --primary-hover: #95c560;
+  --primary-press: #6e9e3e;
+  --on-primary: #10160b;
+  --primary-soft: rgb(var(--primary-rgb) / 0.14);
+  --primary-line: rgb(var(--primary-rgb) / 0.5);
+
+  --gold-rgb: 226 184 79;
+  --gold: rgb(var(--gold-rgb)); /* winner + brand only */
+  --gold-soft: rgb(var(--gold-rgb) / 0.14);
+
+  --amber-rgb: 245 158 52;
+  --amber: rgb(var(--amber-rgb)); /* hints only */
+  --amber-soft: rgb(var(--amber-rgb) / 0.14);
+
+  --danger-rgb: 224 82 74;
+  --danger: rgb(var(--danger-rgb));
+  --danger-press: #c4433c;
+  --danger-soft: rgb(var(--danger-rgb) / 0.14);
+
+  /* Premove only: a cool blue that never competes with green (move) or amber (hint). */
+  --premove-rgb: 92 152 224;
+  --premove: rgb(var(--premove-rgb));
+  --premove-soft: rgb(var(--premove-rgb) / 0.16);
+
+  /* Move-quality tones (graph markers, summary). Same values as MOVE_RATING_META. */
+  --tone-brilliant: #1baca6;
+  --tone-best: #7fa650;
+  --tone-inaccuracy: #f0c15c;
+  --tone-mistake: #e68f44;
+  --tone-blunder: #ca3431;
+
+  /* Eval graph */
+  --graph-white: var(--ivory);
+  --graph-black: var(--ink-soft);
+
+  /* Legacy aliases kept so older selectors resolve to the palette */
+  --accent: var(--gold);
+  --accent-soft: var(--gold-soft);
+  --border: var(--line);
+  --border-soft: var(--line);
+  --border-strong: var(--line-strong);
+  --muted-strong: var(--text-soft);
+  --surface-raised: var(--surface-2);
+  --surface-soft: var(--surface-3);
+  --surface-hover: var(--surface-3);
+
+  --overlay: rgb(0 0 0 / 0.55);
+  --hover-wash: rgb(255 255 255 / 0.05);
+  --press-wash: rgb(255 255 255 / 0.08);
+
+  /* Shape ---------------------------------------------------------- */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-pill: 999px;
+
+  --shadow-pop: 0 8px 24px rgb(0 0 0 / 0.4);
+  --shadow-modal: 0 24px 64px rgb(0 0 0 / 0.5);
+
+  /* Spacing (4px base) -------------------------------------------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  --control-sm: 32px;
+  --control-md: 40px;
+
+  /* Motion --------------------------------------------------------- */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-move: cubic-bezier(0.2, 0.75, 0.25, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-press: 100ms;
+  --dur-fast: 160ms;
+  --dur-move: 220ms;
+  --dur-flip: 260ms;
+  --dur-modal: 200ms;
+  --dur-hover: var(--dur-fast);
+
+  /* Layout --------------------------------------------------------- */
+  --header-h: 56px;
+  --page-pad-x: 24px;
+  --page-pad-y: 16px;
+  --col-gap: 24px;
+  --sidebar-w: 380px;
+  --strip-h: 48px;
+  --toolbar-h: 44px;
+  --stage-gap: 8px;
+  --eval-w: 24px;
+  --eval-gap: 8px;
+  --board-max: 880px;
+
+  /* Board fills the viewport height minus the chrome around it, and never
+     exceeds the width left over after the side panel and the eval bar. */
+  --board-by-height: calc(
+    100dvh - var(--header-h) - 2 * var(--strip-h) - var(--toolbar-h) - 3 * var(--stage-gap) -
+      2 * var(--page-pad-y)
+  );
+  --board-by-width: calc(
+    100vw - var(--sidebar-w) - var(--col-gap) - 2 * var(--page-pad-x) - var(--eval-w) -
+      var(--eval-gap)
+  );
+  --board-size: max(280px, min(var(--board-by-height), var(--board-by-width), var(--board-max)));
+
+  /* Board theme: Emerald (default) -------------------------------- */
+  --board-light: #ebecd0;
+  --board-dark: #739552;
+  --coord-on-light: #739552;
+  --coord-on-dark: #ebecd0;
+  --board-last: rgb(255 255 51 / 0.42);
+  --board-selected: rgb(255 255 51 / 0.5);
+  --board-hint-dot: rgb(0 0 0 / 0.14);
+  --board-check: var(--danger);
+}
+
+[data-theme='walnut'] {
+  --board-light: #f0d9b5;
+  --board-dark: #b58863;
+  --coord-on-light: #b58863;
+  --coord-on-dark: #f0d9b5;
+  --board-last: rgb(255 214 64 / 0.42);
+  --board-selected: rgb(255 214 64 / 0.52);
+  --board-hint-dot: rgb(40 20 0 / 0.16);
+}
+
+[data-theme='midnight'] {
+  --board-light: #dee3e6;
+  --board-dark: #8ca2ad;
+  --coord-on-light: #788f9b;
+  --coord-on-dark: #eef2f4;
+  --board-last: rgb(155 199 0 / 0.41);
+  --board-selected: rgb(155 199 0 / 0.5);
+  --board-hint-dot: rgb(10 30 45 / 0.15);
+}
+
+[data-theme='blush'] {
+  --board-light: #f1e2dd;
+  --board-dark: #b98c92;
+  --coord-on-light: #a87a81;
+  --coord-on-dark: #f7ebe8;
+  --board-last: rgb(255 210 90 / 0.44);
+  --board-selected: rgb(255 210 90 / 0.54);
+  --board-hint-dot: rgb(60 20 30 / 0.15);
+}
+
+/* New: Slate — cool stone, low saturation, quiet under any piece set. */
+[data-theme='slate'] {
+  --board-light: #d5d8d4;
+  --board-dark: #7f8a86;
+  --coord-on-light: #6f7a76;
+  --coord-on-dark: #e6e9e5;
+  --board-last: rgb(250 212 92 / 0.45);
+  --board-selected: rgb(250 212 92 / 0.55);
+  --board-hint-dot: rgb(10 20 18 / 0.16);
+}

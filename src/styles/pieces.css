@@ -1,0 +1,46 @@
+.piece-art {
+  display: block;
+  overflow: visible;
+  pointer-events: none;
+  flex: 0 0 auto;
+}
+
+.piece-art--b {
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.12));
+}
+
+.player-avatar .piece-art,
+.captured-piece .piece-art,
+.piece-card-art,
+.result-king .piece-art,
+.result-draw-kings .piece-art,
+.versus-piece .piece-art,
+.move-empty-art .piece-art {
+  width: 100%;
+  height: 100%;
+}
+
+.captured-piece .piece-art,
+.move-empty-art .piece-art {
+  filter: none;
+}
+
+/* Captured black pieces sit on the dark shell: a hairline light edge keeps them legible. */
+.captured-piece .piece-art--b {
+  filter: drop-shadow(0 0 0.6px rgb(255 255 255 / 0.55));
+}
+
+@media (prefers-contrast: more) {
+  .piece[data-piece-color='b'] .piece-art {
+    filter:
+      drop-shadow(0 0 1px rgba(255, 255, 255, 0.35))
+      drop-shadow(0 3px 2px rgba(0, 0, 0, 0.35));
+  }
+}
+
+/* Image-based piece sets (see src/game/pieceSets.ts) */
+.piece-art--img {
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+}
