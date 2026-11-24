@@ -4,5 +4,5 @@ services:
     image: gambit-chess:latest
     container_name: gambit
     ports:
-      - "8080:80"
+      - "8080:4173"
     restart: unless-stopped
