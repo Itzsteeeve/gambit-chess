@@ -242,8 +242,11 @@
 
 .piece-lift {
   display: block;
-  width: 100%;
-  height: 100%;
+  /* Slightly inset towards the top-left so the file letter in the
+     bottom-right corner of the square never sits under a piece. */
+  width: 84%;
+  height: 84%;
+  margin: 2% 0 0 4%;
   transform-origin: 50% 60%;
   animation: piece-in 260ms var(--ease-out) backwards;
   animation-delay: calc(var(--piece-index, 0) * 6ms);

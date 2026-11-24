@@ -3,7 +3,7 @@
  *
  * API
  *   PIECE_SETS            list of { id, name, author, license, description, source? } for a settings UI
- *   DEFAULT_PIECE_SET     'ivory'
+ *   DEFAULT_PIECE_SET     'chessnut'
  *   isPieceSetId(v)       type guard (validates stored / external values)
  *   getPieceSet()         current id (synchronous)
  *   setPieceSet(id)       change the set everywhere; persisted to localStorage key `gambit.piece-set`
@@ -30,19 +30,19 @@ export interface PieceSetInfo {
 
 export const PIECE_SETS: readonly PieceSetInfo[] = [
   {
-    id: 'ivory',
-    name: 'Ivory & Onyx',
-    author: 'Gambit',
-    license: 'Původní dílo projektu',
-    description: 'Vektorové figury s vrstvenou 3D modelací.',
-  },
-  {
     id: 'chessnut',
     name: 'Chessnut',
     author: 'Alexis Luengas',
     license: 'Apache-2.0',
     description: 'Čisté, moderní ploché figury s výraznou linkou.',
     source: 'https://github.com/LexLuengas/chessnut-pieces',
+  },
+  {
+    id: 'ivory',
+    name: 'Ivory & Onyx',
+    author: 'Gambit',
+    license: 'Původní dílo projektu',
+    description: 'Vektorové figury s vrstvenou 3D modelací.',
   },
   {
     id: 'terracotta',
@@ -54,7 +54,7 @@ export const PIECE_SETS: readonly PieceSetInfo[] = [
   },
 ]
 
-export const DEFAULT_PIECE_SET: PieceSetId = 'ivory'
+export const DEFAULT_PIECE_SET: PieceSetId = 'chessnut'
 export const PIECE_SET_STORAGE_KEY = 'gambit.piece-set'
 
 export function isPieceSetId(value: unknown): value is PieceSetId {
