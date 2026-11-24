@@ -46,3 +46,9 @@ npm run engine:copy  # znovu zkopírovat soubory Stockfishe
 ## Technologie
 
 React 19, TypeScript, Vite, `chess.js` (pravidla), Stockfish 19 lite (WASM ve dvou Web Workerech: jeden hraje, druhý analyzuje), čisté CSS s tokeny (`src/styles/tokens.css`). Popis designu je v `DESIGN.md`, licence třetích stran v `THIRD_PARTY.md`.
+
+## Docker
+
+```bash
+docker compose up --build   # aplikace poběží na http://localhost:8080
+```
