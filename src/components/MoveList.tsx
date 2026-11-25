@@ -32,6 +32,20 @@ interface MoveListProps {
   reviewStatus?: string | null
 }
 
+/**
+ * Scrolls only the move list, just far enough to show `cell` below the sticky
+ * header. `scrollIntoView` would also scroll the whole page on narrow layouts.
+ */
+function revealInList(list: HTMLElement, cell: HTMLElement) {
+  const headerHeight = list.querySelector<HTMLElement>('.moves-table-header')?.offsetHeight ?? 0
+  const view = list.getBoundingClientRect()
+  const box = cell.getBoundingClientRect()
+  const above = box.top - (view.top + headerHeight)
+  const below = box.bottom - view.bottom
+  if (above < 0) list.scrollTop += above
+  else if (below > 0) list.scrollTop += below
+}
+
 export function MoveList({
   history,
   turn,
@@ -63,9 +77,10 @@ export function MoveList({
   }, [history.length, reviewing])
 
   useEffect(() => {
-    if (!reviewing) return
-    const cell = scrollRef.current?.querySelector<HTMLElement>('.move-cell.is-current')
-    cell?.scrollIntoView({ block: 'nearest' })
+    const list = scrollRef.current
+    if (!list || !reviewing) return
+    const cell = list.querySelector<HTMLElement>('.move-cell.is-current')
+    if (cell) revealInList(list, cell)
   }, [reviewing, shownPly])
 
   let statusText: string
