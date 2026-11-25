@@ -83,7 +83,7 @@
 
 .captured-pieces {
   display: flex;
-  height: 16px;
+  height: 18px;
   align-items: center;
   overflow: hidden;
   white-space: nowrap;
@@ -91,9 +91,23 @@
 
 .captured-piece {
   display: inline-block;
-  width: 16px;
-  height: 16px;
-  margin-left: -5px;
+  width: 18px;
+  height: 18px;
+  margin-left: -4px;
+  animation: captured-in var(--dur-base, 240ms) var(--ease-out) both;
+}
+
+@keyframes captured-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.6);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .captured-piece {
+    animation: none;
+  }
 }
 
 .captured-piece:first-child {
@@ -1230,19 +1244,26 @@
 /* Review bar (replaces the toolbar while browsing)                   */
 /* ------------------------------------------------------------------ */
 
+.review-bar {
+  gap: var(--space-3);
+  container-type: inline-size;
+}
+
 .review-bar-status {
   display: flex;
   min-width: 0;
-  flex: 1;
+  flex: 1 1 0;
   align-items: center;
   gap: var(--space-2);
-  padding: 0 var(--space-2);
+  padding: 0 var(--space-3);
+  overflow: hidden;
   color: var(--text-soft);
   font-size: var(--fs-sm);
   white-space: nowrap;
 }
 
 .review-bar-move {
+  flex: 0 0 auto;
   color: var(--text);
   font-weight: var(--fw-semibold);
   font-variant-numeric: tabular-nums;
@@ -1250,6 +1271,7 @@
 
 .review-bar-rating,
 .review-bar-best {
+  min-width: 0;
   overflow: hidden;
   color: var(--muted);
   font-size: var(--fs-xs);
@@ -1258,6 +1280,25 @@
 
 .review-bar-best {
   color: var(--primary);
+}
+
+/* Secondary info yields first when the bar gets tight. */
+@container (max-width: 640px) {
+  .review-bar-rating,
+  .review-bar-best {
+    display: none;
+  }
+}
+
+.review-bar .toolbar-text-button {
+  flex: 0 0 auto;
+}
+
+.review-bar-exit {
+  flex: 0 0 auto;
+  margin-left: var(--space-2);
+  padding: 0 var(--space-5);
+  box-shadow: 0 4px 14px -6px var(--primary);
 }
 
 /* ------------------------------------------------------------------ */

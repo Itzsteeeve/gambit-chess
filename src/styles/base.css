@@ -479,3 +479,12 @@ html[data-motion='off'] .confetti {
     display: none !important;
   }
 }
+
+/* Subtle lift on icon buttons. */
+.icon-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.icon-button:active:not(:disabled) {
+  transform: translateY(0) scale(0.94);
+}

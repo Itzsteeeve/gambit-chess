@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import type { FormEvent } from 'react'
-import { Bot, Swords, User } from 'lucide-react'
+import type { CSSProperties, FormEvent } from 'react'
+import { Bot, Play, Swords, User } from 'lucide-react'
 import { COLOR_CHOICES, TIME_CONTROLS } from '../game/constants'
 import type { ColorChoice, TimeControl } from '../game/constants'
 import type { GameMode } from '../game/engineLevels'
@@ -82,6 +82,7 @@ export function NewGameDialog({
               close(() => onStart(next))
             }}
           >
+            <Play size={15} fill="currentColor" aria-hidden="true" />
             Začít partii
           </button>
         </>
@@ -89,7 +90,12 @@ export function NewGameDialog({
     >
       <form id="new-game-form" onSubmit={handleSubmit} className="new-game-form">
         {/* Opponent mode toggle */}
-        <div className="mode-toggle" role="radiogroup" aria-label="Režim soupeře">
+        <div
+          className="mode-toggle"
+          role="radiogroup"
+          aria-label="Režim soupeře"
+          style={{ '--i': mode === 'stockfish' ? 0 : 1 } as CSSProperties}
+        >
           <button
             type="button"
             className={cx('mode-toggle-btn', mode === 'stockfish' && 'is-selected')}
@@ -122,7 +128,12 @@ export function NewGameDialog({
             <div className="new-game-row">
               <fieldset className="tempo-fieldset">
                 <legend>Hraješ za</legend>
-                <div className="mode-toggle mode-toggle--three" role="radiogroup" aria-label="Barva figur">
+                <div
+                  className="mode-toggle mode-toggle--three"
+                  role="radiogroup"
+                  aria-label="Barva figur"
+                  style={{ '--i': Math.max(0, COLOR_CHOICES.findIndex((c) => c.id === color)) } as CSSProperties}
+                >
                   {COLOR_CHOICES.map((choice) => (
                     <button
                       key={choice.id}
