@@ -776,6 +776,14 @@ export default function App() {
     startNewGame({ ...lastSettings, timeControl })
   }, [lastSettings, startNewGame, timeControl])
 
+  /** Picking another level in the header starts a new game with it right away. */
+  const changeLevel = useCallback(
+    (levelId: string) => {
+      startNewGame({ ...lastSettings, mode: 'stockfish', levelId })
+    },
+    [lastSettings, startNewGame],
+  )
+
   const openNewGame = useCallback(() => {
     setGameOverOpen(false)
     setDialog('new')
@@ -1143,8 +1151,7 @@ export default function App() {
         onHome={goHome}
         gameMode={gameMode}
         engineLevel={engineLevel}
-        onChangeLevel={setEngineLevelId}
-        gameInProgress={game.started && !game.outcome}
+        onChangeLevel={changeLevel}
       />
 
       {screen === 'home' ? (

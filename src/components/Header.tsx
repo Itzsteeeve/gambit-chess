@@ -12,8 +12,6 @@ interface HeaderProps {
   gameMode: GameMode
   engineLevel: EngineLevel
   onChangeLevel?: (levelId: string) => void
-  /** Optional: a game is under way, so level changes show "Platí od dalšího tahu". */
-  gameInProgress?: boolean
   /** Optional: engine failed to load; shown as a small inline error. */
   engineError?: string | null
   /** Optional, accepted for API symmetry with EvalBar/CoachCard (unused here). */
@@ -30,7 +28,6 @@ export function Header({
   gameMode,
   engineLevel,
   onChangeLevel,
-  gameInProgress,
   engineError,
   onHome,
 }: HeaderProps) {
@@ -43,11 +40,7 @@ export function Header({
 
         {gameMode === 'stockfish' ? (
           onChangeLevel ? (
-            <LevelPicker
-              level={engineLevel}
-              onChange={onChangeLevel}
-              gameInProgress={gameInProgress}
-            />
+            <LevelPicker level={engineLevel} onChange={onChangeLevel} />
           ) : (
             <span className="header-mode">
               Stockfish {engineLevel.elo === null ? 'Max' : engineLevel.elo}

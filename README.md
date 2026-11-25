@@ -4,7 +4,7 @@ Chess in the browser. Play against Stockfish 19 (from 250 Elo up to full strengt
 
 ## Features
 
-- **Play vs Stockfish**: 14 levels (250–2800 Elo plus "Max"). Choose your colour (White / Black / random); when you play Black, Stockfish moves first and the board turns towards you. Optional **handicap**: Stockfish starts without its f-pawn, a knight, a rook or its queen (custom start position; the PGN carries `[SetUp]` and `[FEN]` headers).
+- **Play vs Stockfish**: 14 levels (250–2800 Elo plus "Max"); picking another level in the header immediately starts a new game. Choose your colour (White / Black / random); when you play Black, Stockfish moves first and the board turns towards you. Optional **handicap**: Stockfish starts without its f-pawn, a knight, a rook or its queen (custom start position; the PGN carries `[SetUp]` and `[FEN]` headers).
 - **Two players locally** on one device.
 - **Start screen**: "Play" starts immediately with your last settings, "Customize" opens the new-game dialog, plus "Two players locally". Clicking the logo goes home.
 - **Hints** (first click selects a piece, second click shows the move arrow) and a **coach**: every move you make is rated (brilliant … blunder), with accuracy and the best alternative.

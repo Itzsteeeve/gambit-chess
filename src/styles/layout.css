@@ -257,10 +257,6 @@
   font-size: var(--fs-xs);
 }
 
-.level-popover-foot.is-confirm {
-  color: var(--primary);
-}
-
 @keyframes pop-in {
   from {
     opacity: 0;

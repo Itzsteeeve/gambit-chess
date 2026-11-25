@@ -7,15 +7,13 @@ import { cx } from '../lib/cx'
 
 interface LevelPickerProps {
   level: EngineLevel
+  /** Called only for a different level; the app starts a new game with it. */
   onChange: (levelId: string) => void
-  /** When true, a selection shows the "applies from the next move" confirmation. */
-  gameInProgress?: boolean
 }
 
 type MenuState = 'closed' | 'open' | 'closing'
 
 const CLOSE_MS = 110
-const CONFIRM_MS = 1100
 
 function eloText(level: EngineLevel) {
   return level.elo === null ? 'Max' : String(level.elo)
@@ -26,12 +24,11 @@ function eloText(level: EngineLevel) {
  * Home/End, Enter/Space to pick, Esc/Tab to close, type digits or letters
  * to jump (e.g. "16" → 1600, "m" → Max).
  */
-export function LevelPicker({ level, onChange, gameInProgress }: LevelPickerProps) {
+export function LevelPicker({ level, onChange }: LevelPickerProps) {
   const [state, setState] = useState<MenuState>('closed')
   const [activeIndex, setActiveIndex] = useState(() =>
     Math.max(0, ENGINE_LEVELS.findIndex((item) => item.id === level.id)),
   )
-  const [confirmed, setConfirmed] = useState<string | null>(null)
   const rootRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const listRef = useRef<HTMLUListElement>(null)
@@ -51,18 +48,12 @@ export function LevelPicker({ level, onChange, gameInProgress }: LevelPickerProp
   const close = useCallback((returnFocus = true) => {
     clearTimers()
     setState((current) => (current === 'closed' ? current : 'closing'))
-    timers.current.push(
-      window.setTimeout(() => {
-        setState('closed')
-        setConfirmed(null)
-      }, CLOSE_MS),
-    )
+    timers.current.push(window.setTimeout(() => setState('closed'), CLOSE_MS))
     if (returnFocus) buttonRef.current?.focus()
   }, [])
 
   const openMenu = () => {
     clearTimers()
-    setConfirmed(null)
     setActiveIndex(Math.max(0, ENGINE_LEVELS.findIndex((item) => item.id === level.id)))
     setState('open')
   }
@@ -92,14 +83,7 @@ export function LevelPicker({ level, onChange, gameInProgress }: LevelPickerProp
   const choose = (index: number) => {
     const next = ENGINE_LEVELS[index]
     if (!next) return
-    const changed = next.id !== level.id
-    if (changed) onChange(next.id)
-    if (changed && gameInProgress) {
-      setConfirmed(next.id)
-      clearTimers()
-      timers.current.push(window.setTimeout(() => close(), CONFIRM_MS))
-      return
-    }
+    if (next.id !== level.id) onChange(next.id)
     close()
   }
 
@@ -158,8 +142,6 @@ export function LevelPicker({ level, onChange, gameInProgress }: LevelPickerProp
     }
   }
 
-  const confirmedLevel = confirmed ? ENGINE_LEVELS.find((item) => item.id === confirmed) : null
-
   return (
     <div className="level-picker" ref={rootRef}>
       <button
@@ -217,24 +199,9 @@ export function LevelPicker({ level, onChange, gameInProgress }: LevelPickerProp
               )
             })}
           </ul>
-          <div
-            className={cx('level-popover-foot', confirmedLevel && 'is-confirm')}
-            role="status"
-            aria-live="polite"
-          >
-            {confirmedLevel ? (
-              <>
-                <Check size={14} strokeWidth={2.5} aria-hidden="true" />
-                <span>
-                  Nastaveno {eloText(confirmedLevel)} · Platí od dalšího tahu
-                </span>
-              </>
-            ) : (
-              <>
-                <Info size={14} aria-hidden="true" />
-                <span>Změna během partie platí od dalšího tahu Stockfishe.</span>
-              </>
-            )}
+          <div className="level-popover-foot">
+            <Info size={14} aria-hidden="true" />
+            <span>Změna úrovně hned spustí novou partii.</span>
           </div>
         </div>
       ) : null}
