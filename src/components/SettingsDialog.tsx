@@ -18,6 +18,8 @@ interface SettingsDialogProps {
   onShowCoordinatesChange: (value: boolean) => void
   animations: boolean
   onAnimationsChange: (value: boolean) => void
+  showThreats: boolean
+  onShowThreatsChange: (value: boolean) => void
   onTestSound: () => void
   onClose: () => void
 }
@@ -33,6 +35,8 @@ export function SettingsDialog({
   onShowCoordinatesChange,
   animations,
   onAnimationsChange,
+  showThreats,
+  onShowThreatsChange,
   onTestSound,
   onClose,
 }: SettingsDialogProps) {
@@ -167,6 +171,12 @@ export function SettingsDialog({
           </SwitchRow>
           <SwitchRow title="Jemné animace" description="Pohyb figur, zajetí a plynulé přechody.">
             <Switch checked={animations} onChange={onAnimationsChange} label="Zapnout animace" />
+          </SwitchRow>
+          <SwitchRow
+            title="Ukazovat hrozby"
+            description="Proti Stockfishi: červené šipky na figury, o které můžeš přijít."
+          >
+            <Switch checked={showThreats} onChange={onShowThreatsChange} label="Ukazovat hrozby" />
           </SwitchRow>
         </section>
       </div>

@@ -41,6 +41,7 @@
   --ivory: #f4f3ef;
   --ink: #1b1a18;
   --ink-soft: #403d39;
+  --shell-piece-backdrop: #b9b5ac; /* behind black pieces shown outside the board */
 
   /* Accents -------------------------------------------------------- */
   --primary-rgb: 129 182 76;
@@ -120,7 +121,7 @@
 
   /* Motion --------------------------------------------------------- */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --ease-move: cubic-bezier(0.2, 0.75, 0.25, 1);
+  --ease-move: cubic-bezier(0.35, 0.05, 0.15, 1); /* gentle take-off, soft landing */
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
   --dur-press: 100ms;
   --dur-fast: 160ms;
@@ -131,16 +132,16 @@
 
   /* Layout --------------------------------------------------------- */
   --header-h: 56px;
-  --page-pad-x: 24px;
-  --page-pad-y: 16px;
-  --col-gap: 24px;
-  --sidebar-w: 380px;
+  --page-pad-x: 32px;
+  --page-pad-y: 28px;
+  --col-gap: 32px; /* smallest space between the board and the side panel */
+  --sidebar-w: 390px;
   --strip-h: 48px;
   --toolbar-h: 44px;
   --stage-gap: 8px;
   --eval-w: 24px;
   --eval-gap: 8px;
-  --board-max: 880px;
+  --board-max: 1080px;
 
   /* Board fills the viewport height minus the chrome around it, and never
      exceeds the width left over after the side panel and the eval bar. */

@@ -2,6 +2,7 @@ import { useId, useState } from 'react'
 import type { KeyboardEvent, ReactNode } from 'react'
 import type { Color, Move } from 'chess.js'
 import { Crown, Info, ListOrdered } from 'lucide-react'
+import type { BoardThemeId } from '../game/constants'
 import type { RatedMove } from '../game/moveRating'
 import type { GameOutcome } from '../game/notation'
 import { cx } from '../lib/cx'
@@ -24,10 +25,13 @@ interface SidePanelProps {
   isCheck: boolean
   fen: string
   timeControlLabel: string
-  boardThemeName: string
+  boardTheme: BoardThemeId
+  onBoardThemeChange: (theme: BoardThemeId) => void
   orientation: Color
   ratings?: Record<string, RatedMove>
+  /** Coach and analysis, shown at the top of the "Partie" tab. */
   coach?: ReactNode
+  analysis?: ReactNode
   modeLabel?: string
   engineLabel?: string
   onCopyPgn: () => void
@@ -37,7 +41,6 @@ interface SidePanelProps {
   blackLabel?: string
   viewPly?: number
   onSelectPly?: (ply: number) => void
-  graph?: ReactNode
   reviewStatus?: string | null
 }
 
@@ -48,10 +51,12 @@ export function SidePanel({
   isCheck,
   fen,
   timeControlLabel,
-  boardThemeName,
+  boardTheme,
+  onBoardThemeChange,
   orientation,
   ratings,
   coach,
+  analysis,
   modeLabel,
   engineLabel,
   onCopyPgn,
@@ -60,7 +65,6 @@ export function SidePanel({
   blackLabel,
   viewPly,
   onSelectPly,
-  graph,
   reviewStatus,
 }: SidePanelProps) {
   const [activeTab, setActiveTab] = useState<TabId>('moves')
@@ -117,17 +121,19 @@ export function SidePanel({
               isCheck={isCheck}
               ratings={ratings}
               coach={coach}
+              analysis={analysis}
               onCopyPgn={onCopyPgn}
               onCopyFen={onCopyFen}
               whiteLabel={whiteLabel}
               blackLabel={blackLabel}
               viewPly={viewPly}
               onSelectPly={onSelectPly}
-              graph={graph}
               reviewStatus={reviewStatus}
             />
           ) : null}
-          {activeTab === 'pieces' ? <PieceGallery /> : null}
+          {activeTab === 'pieces' ? (
+            <PieceGallery boardTheme={boardTheme} onBoardThemeChange={onBoardThemeChange} />
+          ) : null}
           {activeTab === 'info' ? (
             <GameInfo
               fen={fen}
@@ -136,7 +142,6 @@ export function SidePanel({
               turn={turn}
               isCheck={isCheck}
               timeControlLabel={timeControlLabel}
-              boardThemeName={boardThemeName}
               orientation={orientation}
               modeLabel={modeLabel}
               engineLabel={engineLabel}

@@ -1192,6 +1192,61 @@ html[data-motion='off'] .mode-toggle::before {
   --dot: var(--tone-blunder);
 }
 
+.key-moments {
+  width: 100%;
+  text-align: left;
+}
+
+.key-moments h5 {
+  margin-bottom: var(--space-1);
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+}
+
+.key-moments ul {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  flex-direction: column;
+  gap: var(--space-1);
+  list-style: none;
+}
+
+.key-moment {
+  display: flex;
+  width: 100%;
+  padding: var(--space-2);
+  align-items: flex-start;
+  gap: var(--space-2);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  text-align: left;
+  transition: background-color var(--dur-fast) var(--ease-out);
+}
+
+.key-moment:hover {
+  background: var(--surface-3);
+}
+
+.key-moment-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  overflow-wrap: anywhere;
+}
+
+.key-moment-copy strong {
+  color: var(--text);
+  font-size: var(--fs-sm);
+}
+
+.key-moment-copy span {
+  color: var(--text-soft);
+  font-size: var(--fs-xs);
+  line-height: 1.4;
+}
+
 .result-review-actions {
   display: flex;
   flex-wrap: wrap;

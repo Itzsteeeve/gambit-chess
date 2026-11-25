@@ -11,7 +11,6 @@
 
 .player-avatar .piece-art,
 .captured-piece .piece-art,
-.piece-card-art,
 .result-king .piece-art,
 .result-draw-kings .piece-art,
 .versus-piece .piece-art,
@@ -25,9 +24,21 @@
   filter: none;
 }
 
-/* Captured black pieces sit on the dark shell: a hairline light edge keeps them legible. */
-.captured-piece .piece-art--b {
-  filter: drop-shadow(0 0 0.6px rgb(255 255 255 / 0.55));
+/* Black pieces on the dark shell need a light surface behind them. */
+.captured-pieces[data-captured='b']:not(.is-empty) .captured-row {
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-sm);
+  background: var(--shell-piece-backdrop);
+}
+
+.player-strip[data-color='b'] .player-avatar {
+  background: var(--shell-piece-backdrop);
+}
+
+/* Large kings in the result dialog: a soft light rim instead of a plate. */
+.result-king .piece-art--b,
+.result-draw-kings .piece-art--b {
+  filter: drop-shadow(0 0 1px rgb(255 255 255 / 0.8)) drop-shadow(0 0 10px rgb(255 255 255 / 0.28));
 }
 
 @media (prefers-contrast: more) {

@@ -129,6 +129,8 @@ export function winProbability(cp: number): number {
 }
 
 export function scoreToCp(score: EngineScore): number {
+  // A mate already on the board has no sign of its own; `cp` says who delivered it.
+  if (score.mate === 0) return score.cp ?? -10_000
   if (typeof score.mate === 'number') {
     if (score.mate > 0) return 10_000 - Math.min(score.mate, 40) * 20
     return -10_000 - Math.min(score.mate, 40) * 20
@@ -152,6 +154,18 @@ export function formatEval(score: EngineScore | null | undefined): string {
   }
   const pawns = (score.cp ?? 0) / 100
   return `${pawns >= 0 ? '+' : '−'}${Math.abs(pawns).toFixed(1)}`
+}
+
+/**
+ * Checkmate and stalemate positions have no moves, so the engine reports no
+ * line for them. Returns their analysis directly; null while the game goes on.
+ */
+export function terminalAnalysis(fen: string, depth = 0): EngineAnalysis | null {
+  const chess = new Chess(fen)
+  if (chess.moves().length > 0) return null
+  // From the side to move, as the engine would report it.
+  const score: EngineScore = chess.isCheck() ? { mate: 0, cp: -10_000 } : { cp: 0 }
+  return { fen, depth, bestMove: null, lines: [{ multipv: 1, depth, score, pv: [] }] }
 }
 
 export function evalToWhite(analysis: EngineAnalysis | undefined, fenTurn: Color): EngineScore | null {
@@ -402,7 +416,8 @@ export function rateMove({ move, ply, historySans, before, after, allowBook = tr
     rating,
     loss: winLoss,
     accuracy,
-    bestMoveSan: isBest ? null : sanOfUci(move.before, engineBest),
+    // Any mate is as good as the engine's: there is no better move to show.
+    bestMoveSan: isBest || move.san.endsWith('#') ? null : sanOfUci(move.before, engineBest),
     bestMoveUci: engineBest,
     evalBefore: bestScore,
     evalAfter: afterScoreMover,

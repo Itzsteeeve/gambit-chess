@@ -16,17 +16,20 @@ export function CapturedPieces({ captured, playerColor, advantage }: CapturedPie
   return (
     <div
       className={cx('captured-pieces', captured.length === 0 && 'is-empty')}
+      data-captured={capturedColor}
       aria-label={
         captured.length === 0
           ? 'Zatím žádné zajaté figury'
           : `Zajaté figury: ${captured.length}`
       }
     >
-      {captured.map((type, index) => (
-        <span className="captured-piece" key={`${type}-${index}`} aria-hidden="true">
-          <PieceArt type={type} color={capturedColor} />
-        </span>
-      ))}
+      <span className="captured-row">
+        {captured.map((type, index) => (
+          <span className="captured-piece" key={`${type}-${index}`} aria-hidden="true">
+            <PieceArt type={type} color={capturedColor} />
+          </span>
+        ))}
+      </span>
       {advantage > 0 ? <span className="material-advantage">+{advantage}</span> : null}
     </div>
   )

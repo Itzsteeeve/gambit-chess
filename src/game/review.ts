@@ -91,6 +91,29 @@ export function nextMistakePly(
   return plies.find((ply) => ply > afterPly) ?? plies[0]
 }
 
+/**
+ * History indices of the costliest mistakes by `color` (`null` = either side),
+ * at most `limit` of them, in game order.
+ */
+export function keyMoments(
+  history: Move[],
+  ratings: Record<string, RatedMove>,
+  color: Color | null,
+  limit = 3,
+): number[] {
+  const mistakes: Array<{ index: number; loss: number }> = []
+  history.forEach((move, index) => {
+    if (color && move.color !== color) return
+    const rating = ratings[move.after]
+    if (rating && isMistake(rating.rating)) mistakes.push({ index, loss: rating.loss })
+  })
+  return mistakes
+    .sort((a, b) => b.loss - a.loss)
+    .slice(0, limit)
+    .map((item) => item.index)
+    .sort((a, b) => a - b)
+}
+
 /** Maps a White-POV score to -1..1 (win-probability scale; mate = ±1). */
 export function scoreToUnit(score: EngineScore | null | undefined): number | null {
   if (!score) return null

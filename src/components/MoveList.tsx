@@ -17,6 +17,8 @@ interface MoveListProps {
   isCheck: boolean
   ratings?: Record<string, RatedMove>
   coach?: ReactNode
+  /** Review strip with the evaluation graph, rendered above the list. */
+  analysis?: ReactNode
   onCopyPgn: () => void
   onCopyFen: () => void
   /** Optional column header labels (default: Bílý / Černý). */
@@ -26,8 +28,6 @@ interface MoveListProps {
   viewPly?: number
   /** Click on a move: show the position after it (review). */
   onSelectPly?: (ply: number) => void
-  /** Compact eval graph, rendered above the list. */
-  graph?: ReactNode
   /** Status text override (e.g. while reviewing). */
   reviewStatus?: string | null
 }
@@ -53,13 +53,13 @@ export function MoveList({
   isCheck,
   ratings = {},
   coach,
+  analysis,
   onCopyPgn,
   onCopyFen,
   whiteLabel = 'Bílý',
   blackLabel = 'Černý',
   viewPly,
   onSelectPly,
-  graph,
   reviewStatus,
 }: MoveListProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -112,7 +112,7 @@ export function MoveList({
       </div>
 
       {coach}
-      {graph}
+      {analysis}
 
       <div className="move-list" ref={scrollRef}>
         {pairs.length === 0 ? (

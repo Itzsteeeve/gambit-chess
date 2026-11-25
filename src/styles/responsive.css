@@ -25,14 +25,36 @@
   .app-main {
     height: auto;
     grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
     justify-items: center;
     gap: var(--space-4);
   }
 
-  .side-panel {
+  .app-main > .play-stage {
+    grid-column: auto;
+  }
+
+  .app-main > .side-panel {
     width: calc(var(--board-size) + var(--eval-w) + var(--eval-gap));
     max-width: 100%;
-    height: clamp(420px, 60dvh, 640px);
+    height: auto;
+    max-height: none;
+    grid-column: auto;
+  }
+
+  /* The page scrolls here, so the panel takes its natural height. */
+  .move-list-tab {
+    overflow: visible;
+  }
+
+  .move-list {
+    height: clamp(220px, 36dvh, 360px);
+    flex: none;
+  }
+
+  .gallery-tab,
+  .info-tab {
+    overflow: visible;
   }
 
   .play-stage {

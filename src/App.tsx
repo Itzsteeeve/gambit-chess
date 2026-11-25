@@ -2,15 +2,17 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { Chess } from 'chess.js'
 import type { Color, Move, PieceSymbol, Square } from 'chess.js'
 import { Flag, Handshake } from 'lucide-react'
+import { AnalysisCard } from './components/AnalysisCard'
 import { Board } from './components/Board'
 import type { CaptureFx, LegalTarget, PromotionState, SystemArrow } from './components/Board'
 import { BoardToolbar } from './components/BoardToolbar'
 import { CoachCard } from './components/CoachCard'
+import type { CoachComment } from './components/CoachCard'
 import { ConfirmDialog } from './components/ConfirmDialog'
 import { EvalBar } from './components/EvalBar'
-import { EvalGraph } from './components/EvalGraph'
 import type { GraphMarker } from './components/EvalGraph'
 import { GameOverDialog } from './components/GameOverDialog'
+import type { KeyMoment } from './components/GameOverDialog'
 import { Header } from './components/Header'
 import { MoveClassificationDialog } from './components/MoveClassificationDialog'
 import { NewGameDialog } from './components/NewGameDialog'
@@ -33,6 +35,8 @@ import {
   resolveColorChoice,
 } from './game/constants'
 import type { BoardThemeId, ColorChoice, TimeControl } from './game/constants'
+import { explanationText, speakableText } from './game/coachText'
+import { explainHistoryMove, threatsAgainst } from './game/explain'
 import {
   DEFAULT_ENGINE_LEVEL_ID,
   GAME_MODES,
@@ -47,18 +51,27 @@ import type { HandicapId } from './game/handicap'
 import { evalToWhite, materialBalance, MOVE_RATING_META } from './game/moveRating'
 import { capturedPieces, REASON_LABELS, resultHeadline } from './game/notation'
 import { premovePromotion, premoveTargets } from './game/premove'
-import { fenTurn, nextMistakePly } from './game/review'
+import { fenTurn, keyMoments, nextMistakePly } from './game/review'
 import { useChessClock } from './game/useChessClock'
 import type { ClockSnapshot } from './game/useChessClock'
 import { useChessGame } from './game/useChessGame'
 import { useEngineAnalysis, useStockfishPlay } from './game/useStockfish'
 import { copyText } from './lib/clipboard'
 import { useSound } from './lib/useSound'
+import { useSpeech } from './lib/useSpeech'
 import { isBoolean, isOneOf, useStoredState } from './lib/storage'
 import { useToasts } from './lib/useToasts'
 
 type DialogId = 'new' | 'settings' | 'resign' | 'draw' | 'ratings' | null
 type Screen = 'home' | 'game'
+
+interface CoachDemo {
+  /** Index of the discussed move in the history. */
+  index: number
+  /** Position after that move; identifies it across undo and new games. */
+  after: string
+  view: 'problem' | 'better'
+}
 
 interface Premove {
   from: Square
@@ -129,6 +142,8 @@ export default function App() {
   const [storedTempo, setStoredTempo] = useStoredState('gambit.tempo', 'none', isTempoId)
   const [colorChoice, setColorChoice] = useStoredState<ColorChoice>('gambit.player-color', 'w', isColorChoice)
   const [storedHandicap, setStoredHandicap] = useStoredState<HandicapId>('gambit.handicap', 'none', isHandicapId)
+  const [showThreats, setShowThreats] = useStoredState('gambit.threats', false, isBoolean)
+  const [coachVoice, setCoachVoice] = useStoredState('gambit.coach-voice', false, isBoolean)
 
   const engineLevel = useMemo(() => getEngineLevel(engineLevelId), [engineLevelId])
 
@@ -150,6 +165,13 @@ export default function App() {
   /** Ply shown in read-only review (null = live position). */
   const [reviewPly, setReviewPly] = useState<number | null>(null)
   const [premove, setPremove] = useState<Premove | null>(null)
+  /** Coach demonstration on the board; the game (engine and clock) waits meanwhile. */
+  const [demo, setDemo] = useState<CoachDemo | null>(null)
+  /** Position the player returned to with "Zkusit znovu". */
+  const [retryFen, setRetryFen] = useState<string | null>(null)
+  // Stale once the move it talks about is no longer in the game.
+  const activeDemo = demo && game.history[demo.index]?.after === demo.after ? demo : null
+  const demoActive = activeDemo !== null
 
   const [engineThinking, setEngineThinking] = useState(false)
 
@@ -194,14 +216,15 @@ export default function App() {
       ? (stockfishPlay.error ?? 'Stockfish neodpovídá')
       : null
 
-  const boardThemeName =
-    BOARD_THEMES.find((theme) => theme.id === boardTheme)?.name ?? 'Smaragd'
   const timeControlLabel =
     timeControl.id === 'none' ? 'Bez hodin' : `${timeControl.label} · ${timeControl.caption}`
 
   // ---------------------------------------------------------------- review
   const history = game.history
-  const viewPly = reviewPly !== null && reviewPly < history.length ? reviewPly : history.length
+  const requestedPly = activeDemo
+    ? activeDemo.index + (activeDemo.view === 'problem' ? 1 : 0)
+    : reviewPly
+  const viewPly = requestedPly !== null && requestedPly < history.length ? requestedPly : history.length
   const reviewing = screen === 'game' && viewPly < history.length
   const positionAt = game.positionAt
   const viewState = useMemo(
@@ -227,7 +250,7 @@ export default function App() {
     [gameTimeout, getFen, playSound],
   )
 
-  const clockPaused = gameOverOpen || dialog !== null || promotion !== null || screen === 'home'
+  const clockPaused = gameOverOpen || dialog !== null || promotion !== null || demoActive || screen === 'home'
   const clock = useChessClock({
     timeControl,
     activeColor: game.turn,
@@ -290,6 +313,7 @@ export default function App() {
       setPromotion(null)
       setHintLevel(0)
       setHintMove(null)
+      setRetryFen(null)
       if (timeControl.id !== 'none') {
         // The clock only starts after the first move of the game, so that move earns no increment.
         if (plyBefore > 0) clock.addIncrement(mover)
@@ -352,7 +376,7 @@ export default function App() {
     if (screen !== 'game') return
     if (game.turn !== engineColor) return
     if (game.outcome) return
-    if (isUndoing) return
+    if (isUndoing || demoActive) return
 
     const controller = new AbortController()
     const fen = game.fen
@@ -379,6 +403,7 @@ export default function App() {
       setEngineThinking(false)
     }
   }, [
+    demoActive,
     engineColor,
     engineLatest,
     engineLevelId,
@@ -407,7 +432,8 @@ export default function App() {
   }, [engineError, retryEngine, showToast])
 
   const anyModal = dialog !== null || gameOverOpen
-  const baseInteractive = screen === 'game' && !game.outcome && !anyModal && !isUndoing && !reviewing
+  const baseInteractive =
+    screen === 'game' && !game.outcome && !anyModal && !isUndoing && !reviewing && !demoActive
 
   const userCanInteract =
     baseInteractive && !(isEngineGame && (game.turn !== humanColor || engineThinking))
@@ -664,6 +690,7 @@ export default function App() {
     setCaptureFx(null)
     setPremove(null)
     setReviewPly(null)
+    setDemo(null)
 
     try {
       let ply = game.moveCount
@@ -742,6 +769,8 @@ export default function App() {
       setHintMove(null)
       setPremove(null)
       setReviewPly(null)
+      setDemo(null)
+      setRetryFen(null)
       setGameOverOpen(false)
       setDialog(null)
       setDurationSeconds(0)
@@ -794,6 +823,7 @@ export default function App() {
     setDialog(null)
     setSelected(null)
     setReviewPly(null)
+    setDemo(null)
     setScreen('home')
   }, [])
 
@@ -853,10 +883,28 @@ export default function App() {
       setPromotion(null)
       setHintLevel(0)
       setHintMove(null)
+      setDemo(null)
       setReviewPly(clamped >= history.length ? null : clamped)
     },
     [history.length],
   )
+
+  const openDemo = useCallback(
+    (index: number, view: CoachDemo['view']) => {
+      const move = history[index]
+      if (!move) return
+      setSelected(null)
+      setPromotion(null)
+      setPremove(null)
+      setHintLevel(0)
+      setHintMove(null)
+      setDemo({ index, after: move.after, view })
+      // On narrow layouts the coach sits below the board.
+      document.querySelector('.board-frame')?.scrollIntoView({ block: 'nearest' })
+    },
+    [history],
+  )
+  const closeDemo = useCallback(() => setDemo(null), [])
 
   const mistakeColor: Color | null = isEngineGame ? humanColor : null
   const ratings = analysisActive ? analysis.ratings : undefined
@@ -924,6 +972,10 @@ export default function App() {
         return
       }
       if (event.key === 'Escape') {
+        if (demoActive) {
+          closeDemo()
+          return
+        }
         if (cancelPremove()) return
         if (reviewing) {
           showPly(history.length)
@@ -945,7 +997,7 @@ export default function App() {
         event.preventDefault()
         const step = event.key === 'ArrowLeft' ? -1 : 1
         // While reviewing, or after the game (undo is closed then), arrows browse the moves.
-        if (reviewing || game.outcome) {
+        if (reviewing || game.outcome || demoActive) {
           showPly(viewPly + step)
           return
         }
@@ -960,6 +1012,8 @@ export default function App() {
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [
     cancelPremove,
+    closeDemo,
+    demoActive,
     dialog,
     game.outcome,
     gameOverOpen,
@@ -1074,11 +1128,124 @@ export default function App() {
   const viewAnalysis = analysis.analyses.get(viewFen)
   const viewEval = reviewing ? evalToWhite(viewAnalysis, fenTurn(viewFen)) : analysis.currentEval
   const bestUci = reviewing ? (viewAnalysis?.bestMove ?? viewAnalysis?.lines[0]?.pv[0] ?? null) : null
-  const bestParsed = bestUci ? parseUciMove(bestUci) : null
-  const systemArrows: SystemArrow[] = bestParsed
-    ? [{ from: bestParsed.from as Square, to: bestParsed.to as Square, kind: 'best' }]
-    : []
   const bestSan = reviewing ? sanOf(viewFen, bestUci) : null
+
+  // ---------------------------------------------------------------- coach
+  const latestHumanIndex = analysis.latestHumanMove ? history.lastIndexOf(analysis.latestHumanMove) : -1
+  /** Move the coach talks about: the demonstrated, the reviewed or the latest one. */
+  const coachIndex = activeDemo
+    ? activeDemo.index
+    : reviewing
+      ? viewPly - 1
+      : isEngineGame
+        ? latestHumanIndex
+        : history.length - 1
+  const coachMove = history[coachIndex] ?? null
+  const coachRated = coachMove ? (ratings?.[coachMove.after] ?? null) : null
+  const analyses = analysis.analyses
+  const explanation = useMemo(
+    () =>
+      ratings ? explainHistoryMove(history, coachIndex, ratings, analyses, gameHandicap === 'none') : null,
+    [analyses, coachIndex, gameHandicap, history, ratings],
+  )
+
+  const coachComment: CoachComment | null =
+    coachMove && coachRated && explanation
+      ? {
+          title: `${
+            !isEngineGame
+              ? `Tah ${coachMove.color === 'w' ? 'bílého' : 'černého'}`
+              : coachMove.color === humanColor
+                ? 'Tvůj tah'
+                : 'Tah Stockfishe'
+          } ${coachMove.san}`,
+          rating: coachRated.rating,
+          accuracy: coachRated.accuracy,
+          text: explanationText(explanation),
+        }
+      : null
+  const coachPending = Boolean(coachMove) && !coachRated && analyses.get(coachMove!.after)?.lines.length !== 0
+
+  const speech = useSpeech()
+  const { speak, cancel: cancelSpeech } = speech
+  const spoken =
+    screen === 'game' && coachVoice && coachComment && retryFen !== game.fen
+      ? `${MOVE_RATING_META[coachComment.rating].label}. ${speakableText(coachComment.text)}`
+      : null
+  // One reading per move: the wording may still be refined (the opponent replies,
+  // a deeper analysis arrives) and must not be read a second time.
+  const spokenMove = spoken ? (coachMove?.after ?? null) : null
+  const spokenRef = useRef<string | null>(null)
+  const spokenText = useLatest(spoken)
+  useEffect(() => {
+    if (!spokenMove) {
+      cancelSpeech()
+      if (!coachVoice) spokenRef.current = null
+      return
+    }
+    if (spokenRef.current === spokenMove || !spokenText.current) return
+    spokenRef.current = spokenMove
+    speak(spokenText.current)
+  }, [cancelSpeech, coachVoice, speak, spokenMove, spokenText])
+
+  const canRetry =
+    isEngineGame &&
+    !game.outcome &&
+    canUndoNow &&
+    coachIndex === latestHumanIndex &&
+    explanation?.verdict === 'bad' &&
+    (demoActive || !reviewing)
+
+  const handleRetry = useCallback(() => {
+    if (!coachMove) return
+    setRetryFen(coachMove.before)
+    void handleUndo()
+  }, [coachMove, handleUndo])
+
+  const moments = useMemo<KeyMoment[]>(() => {
+    if (!gameOverOpen || !ratings) return []
+    return keyMoments(history, ratings, isEngineGame ? humanColor : null).flatMap((index) => {
+      const explained = explainHistoryMove(history, index, ratings, analyses, gameHandicap === 'none')
+      if (!explained) return []
+      const move = history[index]
+      return [
+        {
+          index,
+          label: moveLabelOf(move, index + 1),
+          rating: ratings[move.after].rating,
+          text: explanationText(explained),
+        },
+      ]
+    })
+  }, [analyses, gameHandicap, gameOverOpen, history, humanColor, isEngineGame, ratings])
+
+  const openMoment = (index: number) => {
+    if (!ratings) return
+    const explained = explainHistoryMove(history, index, ratings, analyses, gameHandicap === 'none')
+    setGameOverOpen(false)
+    openDemo(index, explained?.problemDemo ? 'problem' : 'better')
+  }
+
+  // Arrows: the demonstration wins, then the review's best move, then live threats.
+  const showThreatArrows =
+    showThreats && isEngineGame && !reviewing && !demoActive && !game.outcome && game.turn === humanColor
+  const threats = useMemo(
+    () => (showThreatArrows ? threatsAgainst(game.fen, humanColor) : []),
+    [game.fen, humanColor, showThreatArrows],
+  )
+  const arrowFor = (uci: string | null, kind: SystemArrow['kind']): SystemArrow[] => {
+    const parsed = uci ? parseUciMove(uci) : null
+    return parsed ? [{ from: parsed.from as Square, to: parsed.to as Square, kind }] : []
+  }
+  const demoProblem = activeDemo?.view === 'problem' ? (explanation?.problemDemo ?? null) : null
+  const systemArrows: SystemArrow[] = activeDemo
+    ? activeDemo.view === 'better'
+      ? arrowFor(explanation?.better?.uci ?? null, 'best')
+      : (demoProblem?.arrows.map((arrow) => ({ ...arrow, kind: 'threat' as const })) ?? [])
+    : reviewing
+      ? arrowFor(bestUci, 'best')
+      : threats.map((arrow) => ({ ...arrow, kind: 'threat' as const }))
+  const systemMarks = demoProblem?.marks.map((square) => ({ square, tone: 'red' as const }))
 
   const graphMarkers = useMemo<GraphMarker[]>(() => {
     if (!ratings) return []
@@ -1104,17 +1271,19 @@ export default function App() {
     return markers
   }, [history, ratings])
 
-  const showGraph = analysisActive && history.length > 0
-  const sidePanelGraph = showGraph ? (
-    <EvalGraph
-      compact
-      className="side-eval-graph"
-      series={analysis.evalSeries}
-      currentPly={viewPly}
-      markers={graphMarkers}
-      progress={game.outcome ? analysis.progress : undefined}
-      onSelectPly={showPly}
-    />
+  // Present from the first moment, so nothing shifts when the first move is made.
+  const analysisCard = ratings ? (
+      <AnalysisCard
+        history={history}
+        ratings={ratings}
+        series={analysis.evalSeries}
+        markers={graphMarkers}
+        viewPly={viewPly}
+        progress={game.outcome ? analysis.progress : undefined}
+        whiteName={shortName('w')}
+        blackName={shortName('b')}
+        onSelectPly={showPly}
+      />
   ) : null
 
   const handicapLabel = HANDICAPS.find((item) => item.id === storedHandicap)?.label ?? ''
@@ -1205,6 +1374,7 @@ export default function App() {
                   premove={reviewing ? null : premove}
                   premoveMode={premoveMode}
                   systemArrows={systemArrows}
+                  systemMarks={systemMarks}
                   reviewing={reviewing}
                   onRightClick={cancelPremove}
                   hint={
@@ -1276,19 +1446,31 @@ export default function App() {
             isCheck={game.isCheck}
             fen={viewFen}
             timeControlLabel={timeControlLabel}
-            boardThemeName={boardThemeName}
+            boardTheme={boardTheme}
+            onBoardThemeChange={setBoardTheme}
             orientation={orientation}
             ratings={ratings}
             coach={
               <CoachCard
-                enabled={showAnalysis}
+                enabled={analysisActive}
                 level={engineLevel}
                 status={analysis.status}
-                latestRated={analysis.latestRated}
-                ratingPending={analysis.ratingPending}
-                currentEval={analysis.currentEval}
+                comment={coachComment}
+                ratingPending={coachPending}
                 engineThinking={engineThinking}
+                retryPrompt={retryFen === game.fen && !reviewing && !demoActive}
+                demoView={activeDemo?.view ?? null}
+                backLabel={game.outcome ? 'Zavřít ukázku' : 'Zpět do hry'}
+                onShowProblem={explanation?.problemDemo ? () => openDemo(coachIndex, 'problem') : undefined}
+                onShowBetter={explanation?.better ? () => openDemo(coachIndex, 'better') : undefined}
+                onRetry={canRetry ? handleRetry : undefined}
+                onBack={demoActive ? closeDemo : undefined}
                 onOpenRatings={() => setDialog('ratings')}
+                voice={
+                  speech.available
+                    ? { enabled: coachVoice, onToggle: () => setCoachVoice((value) => !value) }
+                    : undefined
+                }
               />
             }
             modeLabel={isEngineGame ? 'Proti Stockfishi' : 'Dva hráči lokálně'}
@@ -1303,7 +1485,7 @@ export default function App() {
             blackLabel={shortName('b')}
             viewPly={viewPly}
             onSelectPly={showPly}
-            graph={sidePanelGraph}
+            analysis={analysisCard}
             reviewStatus={reviewStatus}
           />
         </main>
@@ -1338,6 +1520,8 @@ export default function App() {
           onShowCoordinatesChange={setShowCoordinates}
           animations={animations}
           onAnimationsChange={setAnimations}
+          showThreats={showThreats}
+          onShowThreatsChange={setShowThreats}
           onTestSound={() => sound.play('capture')}
           onClose={() => setDialog(null)}
         />
@@ -1390,6 +1574,8 @@ export default function App() {
           onNextMistake={jumpToNextMistake}
           onOpenRatings={() => setDialog('ratings')}
           onClose={() => setGameOverOpen(false)}
+          moments={moments}
+          onOpenMoment={openMoment}
         />
       ) : null}
 

@@ -35,13 +35,17 @@ No linter is configured. Verify with `npx tsc -b` (strict) and `npm test`. No gi
 
 **Review mode.** `reviewPly` (null = live). The board then renders `positionAt(viewPly)` locked, the toolbar is replaced by `ReviewBar`, the side panel move list highlights the shown ply, and the best move of the shown position is drawn as a system arrow. Arrow keys browse while reviewing or after the game; otherwise ←/→ are undo/redo. Pure helpers (`summarizeSide`, `nextMistakePly`, `graphPoints`, `buildEvalSeries`) are in `review.ts` and tested.
 
+**Coach explanations.** `tactics.ts` (board facts: legal-move static exchange evaluation, hanging pieces, forks, material outcome of a PV) → `explain.ts` (`explainHistoryMove` picks the reason; returns data) → `coachText.ts` (Czech sentences and declension, `speakableText` for TTS). Rule: claim a concrete reason only when board and engine line agree, otherwise just name the better move; wording stays impersonal. It reuses the cached depth-12 analyses, no extra search. Mate/stalemate positions get no engine line, so `terminalAnalysis` (`moveRating.ts`) supplies one (`{mate: 0, cp}`: `cp` carries the winner). App state `demo` shows a punishment or better-move position; while it is set the engine effect and the clock are paused and the board is locked. Voice is `lib/useSpeech.ts` (`gambit.coach-voice`), threat arrows `gambit.threats`.
+
+**Side panel.** One tabbed panel (moves, piece/board picker, info). `CoachCard` and `AnalysisCard` sit inside the "Partie" tab above the move list (the user rejected a separate column). `CoachCard` keeps the last comment while the next rating is pending; the voice reads each move once, keyed on `move.after`. Visually hidden text inside a scrolling box needs a positioned ancestor, or it stretches the page.
+
 **Premoves and arrows.** While the engine is to move, `premoveMode` lets the human pick their own pieces; targets come from `premove.ts` (geometry only, ignoring occupancy) and the queued move executes in an effect once it is the human's turn, if still legal. `Board` draws all arrows/marks in one SVG (`arrows.ts` geometry): system arrows (hint, best, premove) from props, user right-click arrows/marks as Board-local state cleared on any move or left click. Right click calls `onRightClick` first (cancels a premove).
 
-**Modes.** `gameMode` is `'stockfish' | 'human'` (persisted). Coach card and live ratings only in Stockfish mode; the eval bar is always rendered (neutral/transparent when off) so the board column stays aligned.
+**Modes.** `gameMode` is `'stockfish' | 'human'` (persisted). Live ratings and coach comments only in Stockfish mode (a local game gets them after it ends); the eval bar is always rendered (neutral/transparent when off) so the board column stays aligned.
 
 **Dialogs.** `Modal` animates out (`data-state="closing"`, 160 ms; immediate with reduced motion) before calling `onClose`. Footer buttons use the render-prop form `footer={(close) => …}` and call `close()` or `close(action)`.
 
-**Clock.** `useChessClock.ts` is paused whenever any dialog/promotion is open or the start screen is shown. App stores a clock snapshot per ply and restores it on undo/redo; the first move of the game earns no increment.
+**Clock.** `useChessClock.ts` is paused whenever any dialog/promotion is open, a coach demonstration is shown or the start screen is shown. App stores a clock snapshot per ply and restores it on undo/redo; the first move of the game earns no increment.
 
 **Persistence.** `useStoredState(key, initial, validate?)` (localStorage, keys `gambit.*`; invalid values fall back to the default) for mode, level, orientation, board theme, coordinates, animations, tempo, player colour, handicap. Piece set lives in `pieceSets.ts` (`usePieceSet`, key `gambit.piece-set`).
 

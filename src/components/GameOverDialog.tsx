@@ -3,7 +3,8 @@ import { CircleAlert, Flag, Handshake, Info, Plus, RotateCcw, Trophy } from 'luc
 import type { Color, Move } from 'chess.js'
 import type { GameOutcome } from '../game/notation'
 import { formatDuration, resultHeadline, resultScore, resultSubline } from '../game/notation'
-import type { RatedMove } from '../game/moveRating'
+import type { MoveRating, RatedMove } from '../game/moveRating'
+import { MoveRatingBadge } from './MoveRatingBadge'
 import { REVIEW_BUCKETS, REVIEW_BUCKET_LABELS, summarizeSide } from '../game/review'
 import { cx } from '../lib/cx'
 import { Modal } from './Modal'
@@ -32,6 +33,17 @@ interface GameOverDialogProps {
   onReviewPly: (ply: number) => void
   onNextMistake: () => void
   onOpenRatings?: () => void
+  /** The costliest mistakes with the coach's comment. */
+  moments?: KeyMoment[]
+  onOpenMoment: (index: number) => void
+}
+
+export interface KeyMoment {
+  /** Index of the move in the history. */
+  index: number
+  label: string
+  rating: MoveRating
+  text: string
 }
 
 function headlineFor(outcome: GameOutcome, humanColor: Color | null) {
@@ -62,6 +74,8 @@ export function GameOverDialog({
   onReviewPly,
   onNextMistake,
   onOpenRatings,
+  moments = [],
+  onOpenMoment,
 }: GameOverDialogProps) {
   const winner = outcome.winner
   const humanWon = Boolean(winner && (humanColor === null || winner === humanColor))
@@ -204,6 +218,25 @@ export function GameOverDialog({
                 {analysing ? 'Stockfish právě prochází partii…' : 'Rozbor není k dispozici.'}
               </p>
             )}
+
+            {moments.length > 0 ? (
+              <div className="key-moments">
+                <h5>Klíčové momenty</h5>
+                <ul>
+                  {moments.map((moment) => (
+                    <li key={moment.index}>
+                      <button type="button" className="key-moment" onClick={() => onOpenMoment(moment.index)}>
+                        <MoveRatingBadge rating={moment.rating} size="xs" />
+                        <span className="key-moment-copy">
+                          <strong>{moment.label}</strong>
+                          <span>{moment.text}</span>
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
 
             <div className="result-review-actions">
               <button

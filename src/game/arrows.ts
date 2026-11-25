@@ -79,15 +79,21 @@ export function arrowGeometry(from: Square, to: Square, orientation: Color): Arr
   const ny = ux
 
   const r = (value: number) => Math.round(value * 10) / 10
-  const tip = { x: x2 - ux * 12, y: y2 - uy * 12 }
-  const base = { x: x2 - ux * 34, y: y2 - uy * 34 }
-  const side1 = { x: base.x + nx * 18, y: base.y + ny * 18 }
-  const side2 = { x: base.x - nx * 18, y: base.y - ny * 18 }
-  const notch = { x: base.x + ux * 7, y: base.y + uy * 7 }
+  const tip = { x: x2 - ux * 8, y: y2 - uy * 8 }
+  const base = { x: x2 - ux * 44, y: y2 - uy * 44 }
+  const side1 = { x: base.x + nx * 27, y: base.y + ny * 27 }
+  const side2 = { x: base.x - nx * 27, y: base.y - ny * 27 }
+  const notch = { x: base.x + ux * 5, y: base.y + uy * 5 }
 
-  if (!isKnight) {
-    startX = x1 + ux * 20
-    startY = y1 + uy * 20
+  // Start clear of the middle of the piece that is moving.
+  const lead = 30
+  if (cornerX !== null && cornerY !== null) {
+    const legLength = Math.hypot(cornerX - x1, cornerY - y1) || 1
+    startX = x1 + ((cornerX - x1) / legLength) * lead
+    startY = y1 + ((cornerY - y1) / legLength) * lead
+  } else {
+    startX = x1 + ux * lead
+    startY = y1 + uy * lead
   }
 
   const shaft =

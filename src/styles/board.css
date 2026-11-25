@@ -242,11 +242,10 @@
 
 .piece-lift {
   display: block;
-  /* Slightly inset towards the top-left so the file letter in the
-     bottom-right corner of the square never sits under a piece. */
-  width: 84%;
-  height: 84%;
-  margin: 2% 0 0 4%;
+  /* Dead centre of the square. */
+  width: 88%;
+  height: 88%;
+  margin: 6%;
   transform-origin: 50% 60%;
   animation: piece-in 260ms var(--ease-out) backwards;
   animation-delay: calc(var(--piece-index, 0) * 6ms);
@@ -259,9 +258,17 @@
   filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.22));
 }
 
-/* Knight: a subtle arc while it glides. */
+/* A moving piece is picked up, carried and set down; the knight jumps higher. */
+.piece.is-moving .piece-lift {
+  animation: glide-lift var(--dur-move) var(--ease-in-out);
+}
+
 .piece.is-moving[data-piece-type='n'] .piece-lift {
-  animation: knight-arc var(--dur-move) var(--ease-move);
+  animation-name: knight-arc;
+}
+
+.piece.is-moving .piece-art {
+  animation: glide-shadow var(--dur-move) var(--ease-in-out);
 }
 
 .piece.is-hint-source {
@@ -305,13 +312,29 @@
   }
 }
 
+@keyframes glide-lift {
+  0%,
+  100% {
+    transform: none;
+  }
+  45% {
+    transform: translateY(-5%) scale(1.09);
+  }
+}
+
 @keyframes knight-arc {
   0%,
   100% {
     transform: none;
   }
   50% {
-    transform: translateY(-6%) scale(1.03);
+    transform: translateY(-20%) scale(1.16);
+  }
+}
+
+@keyframes glide-shadow {
+  45% {
+    filter: drop-shadow(0 9px 7px rgb(0 0 0 / 0.32));
   }
 }
 
@@ -358,6 +381,10 @@
 }
 
 .capture-ghost .piece-art {
+  /* Same size and place as the piece it replaces. */
+  width: 88%;
+  height: 88%;
+  margin: 6%;
   animation: capture-pop 120ms var(--ease-out) forwards;
   animation-delay: calc(var(--dur-move) - 120ms);
 }
@@ -622,18 +649,34 @@
   animation: none;
 }
 
+/*
+ * Shaft and head are painted solid and the whole group is translucent, so they
+ * never show a darker seam where they overlap.
+ */
+/* The whole arrow appears at once, in a single short fade. */
 .board-arrow {
   --tone: var(--primary-rgb);
-  animation: fade-in 120ms var(--ease-out) both;
+  opacity: 0.86;
+  filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.3));
+  animation: arrow-in 140ms var(--ease-out) backwards;
 }
 
 .board-arrow-shaft {
   fill: none;
-  stroke: rgb(var(--tone) / 0.82);
+  stroke: rgb(var(--tone));
 }
 
 .board-arrow-head {
-  fill: rgb(var(--tone) / 0.88);
+  fill: rgb(var(--tone));
+  stroke: rgb(var(--tone));
+  stroke-width: 8;
+  stroke-linejoin: round;
+}
+
+@keyframes arrow-in {
+  from {
+    opacity: 0;
+  }
 }
 
 .board-tone--green {
@@ -652,21 +695,21 @@
   --tone: var(--premove-rgb);
 }
 
-/* The arrow being drawn is lighter until it is dropped. */
+/* The arrow being drawn is lighter until it is dropped, and follows the pointer. */
 .board-arrow--drawing {
   opacity: 0.6;
   animation: none;
 }
 
-/* Best move in review: slimmer feel through lower opacity. */
-.board-arrow--best .board-arrow-shaft {
-  stroke: rgb(var(--tone) / 0.7);
+/* A hand-drawn arrow was already visible while dragging: no second appearance. */
+.board-arrow--user {
+  animation: none;
 }
 
+/* No own --tone: it would override the .board-tone--* class on the same element. */
 .board-mark {
-  --tone: var(--primary-rgb);
   fill: none;
-  stroke: rgb(var(--tone) / 0.85);
+  stroke: rgb(var(--tone, var(--primary-rgb)) / 0.85);
   stroke-width: 7;
   animation: fade-in 120ms var(--ease-out) both;
 }

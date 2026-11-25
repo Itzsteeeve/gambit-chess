@@ -290,10 +290,29 @@
   flex: 1 0 auto;
   height: calc(100dvh - var(--header-h));
   padding: var(--page-pad-y) var(--page-pad-x);
-  grid-template-columns: auto var(--sidebar-w);
-  justify-content: center;
-  align-items: stretch;
-  gap: var(--col-gap);
+  /* The panel takes the room the board leaves, up to two comfortable columns. */
+  /* The panel sits at the right; the spare width goes mostly left of the board. */
+  grid-template-columns:
+    minmax(0, 2fr)
+    calc(var(--board-size) + var(--eval-w) + var(--eval-gap))
+    minmax(var(--col-gap), 1fr)
+    var(--sidebar-w);
+  /* The panel scrolls inside itself and never makes the page taller. */
+  grid-template-rows: minmax(0, 1fr);
+  align-items: center;
+}
+
+.app-main > .play-stage {
+  grid-column: 2;
+}
+
+/* Exactly as tall as the board column, so it never runs to the window's edge. */
+.app-main > .side-panel {
+  height: calc(
+    var(--board-size) + 2 * var(--strip-h) + var(--toolbar-h) + 3 * var(--stage-gap)
+  );
+  max-height: 100%;
+  grid-column: 4;
 }
 
 .play-stage {
@@ -394,6 +413,7 @@
 
 .app-main--home {
   grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: none;
   align-items: center;
   justify-items: center;
 }
@@ -431,13 +451,15 @@
 
 .start-preview-piece {
   position: absolute;
+  display: grid;
   width: 12.5%;
   height: 12.5%;
+  place-items: center;
 }
 
 .start-preview-piece .piece-art {
-  width: 100%;
-  height: 100%;
+  width: 88%;
+  height: 88%;
 }
 
 .start-card {

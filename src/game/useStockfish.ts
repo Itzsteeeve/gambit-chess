@@ -6,7 +6,7 @@ import { parseUciMove } from './engineLevels'
 import type { EngineAnalysis } from './uciEngine'
 import { EngineAbortError, UciEngine, isEngineCancellation } from './uciEngine'
 import type { RatedMove } from './moveRating'
-import { evalToWhite, rateMove } from './moveRating'
+import { evalToWhite, rateMove, terminalAnalysis } from './moveRating'
 import { buildEvalSeries, plyFens } from './review'
 
 export type EngineStatus = 'idle' | 'loading' | 'ready' | 'error'
@@ -237,6 +237,14 @@ export function useEngineAnalysis({
         if (cached) {
           inflightRef.current.delete(entry.fen)
           entry.resolve(cached)
+          continue
+        }
+
+        const finished = terminalAnalysis(entry.fen, depthRef.current)
+        if (finished) {
+          inflightRef.current.delete(entry.fen)
+          store(finished)
+          entry.resolve(finished)
           continue
         }
 

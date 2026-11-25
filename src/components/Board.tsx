@@ -64,8 +64,10 @@ interface BoardProps {
   premove?: { from: Square; to: Square } | null
   /** True while the legal targets are premove targets (styled differently). */
   premoveMode?: boolean
-  /** App arrows (best move in review). Hint and premove arrows are derived from their props. */
+  /** App arrows (best move, threats, coach demo). Hint and premove arrows are derived from their props. */
   systemArrows?: SystemArrow[]
+  /** App square marks (coach demo). */
+  systemMarks?: BoardMark[]
   /** Read-only review of a past position. */
   reviewing?: boolean
   /** Right click on the board; return true to consume it (e.g. cancel a premove). */
@@ -103,9 +105,17 @@ interface PointerDownState {
 
 const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'] as const
 
-/** Keep in sync with --dur-move (220ms) and --dur-flip (260ms) in tokens.css. */
-const MOVE_MS = 240
+/** How long a piece counts as moving: just over the longest glide (see `glideMs`). */
+const MOVE_MS = 420
+/** Keep in sync with --dur-flip in tokens.css. */
 const FLIP_MS = 260
+
+/** Longer moves take a little longer, so a queen crossing the board does not teleport. */
+function glideMs(move: Move): number {
+  const files = Math.abs(move.from.charCodeAt(0) - move.to.charCodeAt(0))
+  const ranks = Math.abs(Number(move.from[1]) - Number(move.to[1]))
+  return 210 + 28 * (Math.max(files, ranks) - 1)
+}
 
 const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)'
 
@@ -144,13 +154,14 @@ function allSquares(orientation: Color): Square[] {
 export interface SystemArrow {
   from: Square
   to: Square
-  kind: 'hint' | 'best' | 'premove'
+  kind: 'hint' | 'best' | 'premove' | 'threat'
 }
 
 const SYSTEM_TONE: Record<SystemArrow['kind'], ArrowTone> = {
   hint: 'amber',
   best: 'green',
   premove: 'blue',
+  threat: 'red',
 }
 
 /** One SVG overlay for every arrow and square mark; pointer-events: none. */
@@ -167,11 +178,11 @@ function BoardArrowLayer({
   return (
     <div className="board-arrow-layer" aria-hidden="true">
       <svg viewBox="0 0 800 800" className="board-arrow-svg">
-        {marks.map((mark) => {
+        {marks.map((mark, index) => {
           const position = getDisplayPosition(mark.square, orientation)
           return (
             <circle
-              key={`mark-${mark.square}`}
+              key={`mark-${mark.square}-${index}`}
               cx={position.col * 100 + 50}
               cy={position.row * 100 + 50}
               r={44}
@@ -179,17 +190,18 @@ function BoardArrowLayer({
             />
           )
         })}
-        {arrows.map((arrow, index) => {
+        {arrows.map((arrow) => {
           const geometry = arrowGeometry(arrow.from, arrow.to, orientation)
           return (
             <g
-              key={`${arrow.kind ?? 'user'}-${arrow.from}-${arrow.to}-${index}`}
+              // No index in the key: an arrow keeps its element when others come and go.
+              key={`${arrow.kind ?? 'user'}-${arrow.from}-${arrow.to}`}
               className={cx('board-arrow', `board-tone--${arrow.tone}`, arrow.kind && `board-arrow--${arrow.kind}`)}
             >
               <path
                 d={geometry.shaft}
                 className="board-arrow-shaft"
-                strokeWidth="14"
+                strokeWidth="20"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
@@ -226,6 +238,7 @@ export function Board({
   premove = null,
   premoveMode = false,
   systemArrows,
+  systemMarks,
   reviewing = false,
   onRightClick,
   onSelect,
@@ -717,6 +730,9 @@ export function Board({
                   '--x': position.col,
                   '--y': position.row,
                   '--piece-index': index,
+                  // Set with the position itself, so the transition picks it up.
+                  ...(lastMove?.to === piece.square ? { '--dur-move': `${glideMs(lastMove)}ms` } : null),
+                  ...(undoneMove?.from === piece.square ? { '--dur-move': `${glideMs(undoneMove)}ms` } : null),
                 }
 
             return (
@@ -752,6 +768,8 @@ export function Board({
               style={{
                 '--x': getDisplayPosition(ghost.square, viewOrientation).col,
                 '--y': getDisplayPosition(ghost.square, viewOrientation).row,
+                // The captured piece pops as the capturing one arrives.
+                ...(lastMove ? { '--dur-move': `${glideMs(lastMove)}ms` } : null),
               } as CSSProperties}
               key={ghost.id}
             >
@@ -777,7 +795,7 @@ export function Board({
 
         <BoardArrowLayer
           orientation={viewOrientation}
-          marks={userMarks}
+          marks={[...(systemMarks ?? []), ...userMarks]}
           arrows={[
             ...(systemArrows ?? []).map((arrow) => ({ ...arrow, tone: SYSTEM_TONE[arrow.kind] })),
             ...(hint && hint.level === 2
