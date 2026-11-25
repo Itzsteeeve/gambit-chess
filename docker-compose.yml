@@ -1,7 +1,12 @@
 services:
   gambit:
-    build: .
+    build:
+      context: .
+      args:
+        BASE_PATH: ${BASE_PATH:-/}
     image: gambit-chess:latest
+    # Always rebuild on `up`, so a container never runs from a stale image.
+    pull_policy: build
     container_name: gambit
     ports:
       - "8080:4173"

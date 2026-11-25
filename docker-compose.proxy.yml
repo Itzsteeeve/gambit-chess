@@ -1,0 +1,13 @@
+# For servers where a reverse proxy runs in its own container: joins the app to
+# the proxy's Docker network, so the proxy can reach it as http://gambit:4173.
+# Enable it through COMPOSE_FILE in .env (see .env.example).
+services:
+  gambit:
+    networks:
+      - default
+      - proxy
+
+networks:
+  proxy:
+    external: true
+    name: ${PROXY_NETWORK:-nginx_frontend_net}

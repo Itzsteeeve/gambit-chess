@@ -46,8 +46,16 @@ npm run engine:copy  # re-copy the Stockfish files
 ## Docker
 
 ```bash
-docker compose up --build   # the app is served on http://localhost:8080
+docker compose up -d --build   # the app is served on http://localhost:8080
 ```
+
+### Behind a reverse proxy (e.g. `https://example.com/chess/`)
+
+1. On the server, copy `.env.example` to `.env` next to `docker-compose.yml` and adjust it. `BASE_PATH` is the sub-path, `PROXY_NETWORK` the Docker network of the proxy container, and `COMPOSE_FILE` adds `docker-compose.proxy.yml`.
+2. Add the locations from [`deploy/nginx-chess.conf`](deploy/nginx-chess.conf) to the proxy and reload it. It must forward to `gambit:4173` and keep the `/chess/` prefix.
+3. Run `docker compose up -d --build`. Updating is `git pull` followed by the same command.
+
+`BASE_PATH` is baked into the build, so rebuild after changing it. Server-specific settings belong in `.env` (ignored by git); do not edit the tracked files on the server.
 
 ## Tech
 
