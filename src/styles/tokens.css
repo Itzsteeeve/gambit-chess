@@ -151,6 +151,7 @@
   --surface-2: rgb(255 255 255 / 0.07);
   --surface-3: rgb(255 255 255 / 0.13);
   --well: rgb(0 0 0 / 0.28); /* inset tracks, inputs */
+  --group: rgb(255 255 255 / 0.045); /* grouped rows inside glass */
   --zebra: rgb(255 255 255 / 0.025);
   --line: rgb(255 255 255 / 0.08);
   --line-strong: rgb(255 255 255 / 0.16);
@@ -197,7 +198,10 @@
 
   /* Eval graph */
   --graph-white: var(--ivory);
-  --graph-black: var(--ink-soft);
+  --graph-black: rgb(0 0 0 / 0.34);
+  --graph-line: rgb(255 255 255 / 0.75);
+  --graph-mid: rgb(255 255 255 / 0.22);
+  --graph-ring: #121815;
 
   --overlay: rgb(3 6 5 / 0.45);
   --hover-wash: rgb(255 255 255 / 0.07);
@@ -238,6 +242,7 @@
   --surface-2: rgb(255 255 255 / 0.62);
   --surface-3: rgb(16 40 28 / 0.075);
   --well: rgb(16 40 28 / 0.055);
+  --group: rgb(255 255 255 / 0.6);
   --zebra: rgb(16 40 28 / 0.025);
   --line: rgb(16 40 28 / 0.09);
   --line-strong: rgb(16 40 28 / 0.16);
@@ -273,7 +278,10 @@
   --clock-run-fg: #ffffff;
 
   --graph-white: #ffffff;
-  --graph-black: #6b746f;
+  --graph-black: rgb(28 44 36 / 0.58);
+  --graph-line: rgb(28 44 36 / 0.3);
+  --graph-mid: rgb(28 44 36 / 0.25);
+  --graph-ring: #ffffff;
 
   --overlay: rgb(20 36 28 / 0.2);
   --hover-wash: rgb(16 40 28 / 0.05);

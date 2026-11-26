@@ -186,6 +186,56 @@ export function graphPoints(values: Array<number | null>, width: number, height:
   return points
 }
 
+/**
+ * SVG path through the points as a monotone cubic curve (Fritsch–Carlson):
+ * smooth, but it never overshoots between two evaluations, so the curve
+ * cannot suggest an advantage no position had.
+ */
+export function smoothPath(points: GraphPoint[]): string {
+  const n = points.length
+  if (n === 0) return ''
+  const f = (value: number) => value.toFixed(1)
+  if (n === 1) return `M${f(points[0].x)} ${f(points[0].y)}`
+  const dx: number[] = []
+  const slope: number[] = []
+  for (let i = 0; i < n - 1; i += 1) {
+    const step = points[i + 1].x - points[i].x || 1e-6
+    dx.push(step)
+    slope.push((points[i + 1].y - points[i].y) / step)
+  }
+  const tangent: number[] = [slope[0]]
+  for (let i = 1; i < n - 1; i += 1) {
+    tangent.push(slope[i - 1] * slope[i] <= 0 ? 0 : (slope[i - 1] + slope[i]) / 2)
+  }
+  tangent.push(slope[n - 2])
+  for (let i = 0; i < n - 1; i += 1) {
+    if (slope[i] === 0) {
+      tangent[i] = 0
+      tangent[i + 1] = 0
+      continue
+    }
+    const a = tangent[i] / slope[i]
+    const b = tangent[i + 1] / slope[i]
+    const h = a * a + b * b
+    if (h > 9) {
+      const tau = 3 / Math.sqrt(h)
+      tangent[i] = tau * a * slope[i]
+      tangent[i + 1] = tau * b * slope[i]
+    }
+  }
+  let path = `M${f(points[0].x)} ${f(points[0].y)}`
+  for (let i = 0; i < n - 1; i += 1) {
+    const third = dx[i] / 3
+    const p0 = points[i]
+    const p1 = points[i + 1]
+    path +=
+      ` C${f(p0.x + third)} ${f(p0.y + tangent[i] * third)}` +
+      ` ${f(p1.x - third)} ${f(p1.y - tangent[i + 1] * third)}` +
+      ` ${f(p1.x)} ${f(p1.y)}`
+  }
+  return path
+}
+
 /** Nearest ply for an x coordinate in a chart of `count` plies. */
 export function plyAtX(x: number, width: number, count: number): number {
   if (count <= 1 || width <= 0) return 0

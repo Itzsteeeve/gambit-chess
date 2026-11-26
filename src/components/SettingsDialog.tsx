@@ -1,4 +1,4 @@
-import { Monitor, Moon, Settings2, Sun, Volume2, VolumeX } from 'lucide-react'
+import { Check, Settings2, Volume2, VolumeX } from 'lucide-react'
 import type { CSSProperties } from 'react'
 import type { BoardThemeId } from '../game/constants'
 import { BOARD_THEMES } from '../game/constants'
@@ -69,48 +69,52 @@ export function SettingsDialog({
       )}
     >
       <div className="settings-sections">
-        <section className="settings-section">
-          <div className="settings-section-head">
-            <h3>Vzhled</h3>
-          </div>
-          <div
-            className="mode-toggle mode-toggle--three appearance-toggle"
-            role="radiogroup"
-            aria-label="Vzhled aplikace"
-            style={{ '--i': Math.max(0, APPEARANCES.findIndex((option) => option.id === appearance)) } as CSSProperties}
-          >
-            {APPEARANCES.map((option) => {
-              const Icon = option.id === 'light' ? Sun : option.id === 'dark' ? Moon : Monitor
-              return (
-                <button
+        <section className="settings-section" aria-labelledby="settings-appearance">
+          <h3 className="settings-label" id="settings-appearance">
+            Vzhled
+          </h3>
+          <div className="settings-group">
+            <div className="appearance-picker" role="radiogroup" aria-labelledby="settings-appearance">
+              {APPEARANCES.map((option) => (
+                <label
                   key={option.id}
-                  type="button"
-                  role="radio"
-                  aria-checked={appearance === option.id}
-                  className={cx('mode-toggle-btn', appearance === option.id && 'is-selected')}
-                  onClick={() => onAppearanceChange(option.id)}
+                  className={cx('appearance-option', appearance === option.id && 'is-selected')}
                 >
-                  <Icon size={15} aria-hidden="true" />
-                  <span>{option.label}</span>
-                </button>
-              )
-            })}
+                  <input
+                    type="radio"
+                    name="appearance"
+                    value={option.id}
+                    checked={appearance === option.id}
+                    onChange={() => onAppearanceChange(option.id)}
+                    className="sr-only"
+                  />
+                  <span className={`appearance-preview appearance-preview--${option.id}`} aria-hidden="true">
+                    <span className="appearance-preview-bar" />
+                    <span className="appearance-preview-board" />
+                    <span className="appearance-preview-panel" />
+                  </span>
+                  <span className="appearance-name">{option.label}</span>
+                </label>
+              ))}
+            </div>
+            <SwitchRow
+              title="Omezit průhlednost"
+              description="Plné plochy místo skla. Klidnější a šetrnější k výkonu."
+            >
+              <Switch
+                checked={reduceTransparency}
+                onChange={onReduceTransparencyChange}
+                label="Omezit průhlednost"
+              />
+            </SwitchRow>
           </div>
-          <SwitchRow
-            title="Omezit průhlednost"
-            description="Plné plochy místo skla. Klidnější a šetrnější k výkonu."
-          >
-            <Switch
-              checked={reduceTransparency}
-              onChange={onReduceTransparencyChange}
-              label="Omezit průhlednost"
-            />
-          </SwitchRow>
         </section>
 
-        <section className="settings-section">
-          <div className="settings-section-head">
-            <h3>Zvuk</h3>
+        <section className="settings-section" aria-labelledby="settings-sound">
+          <div className="settings-label-row">
+            <h3 className="settings-label" id="settings-sound">
+              Zvuk
+            </h3>
             <button
               type="button"
               className="test-sound-button"
@@ -120,72 +124,69 @@ export function SettingsDialog({
               Vyzkoušet
             </button>
           </div>
-          <SwitchRow
-            title="Zvuky partie"
-            description="Jemné dřevěné kliknutí, šach a konec. Nic otravného."
-          >
-            <div className="sound-control">
-              {soundEnabled ? <Volume2 size={17} /> : <VolumeX size={17} />}
+          <div className="settings-group">
+            <SwitchRow
+              title="Zvuky partie"
+              description="Jemné dřevěné kliknutí, šach a konec. Nic otravného."
+            >
               <Switch checked={soundEnabled} onChange={onToggleSound} label="Zapnout zvuky" />
+            </SwitchRow>
+            <div className={cx('volume-row', !soundEnabled && 'is-disabled')}>
+              <VolumeX size={16} aria-hidden="true" />
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={Math.round(volume * 100)}
+                onChange={(event) => onVolumeChange(Number(event.target.value) / 100)}
+                aria-label="Hlasitost zvuků"
+                disabled={!soundEnabled}
+                style={{ '--fill': `${Math.round(volume * 100)}%` } as CSSProperties}
+              />
+              <Volume2 size={16} aria-hidden="true" />
+              <span>{Math.round(volume * 100)} %</span>
             </div>
-          </SwitchRow>
-          <div className={cx('volume-row', !soundEnabled && 'is-disabled')}>
-            <span>Ticho</span>
-            <input
-              type="range"
-              min={0}
-              max={100}
-              value={Math.round(volume * 100)}
-              onChange={(event) => onVolumeChange(Number(event.target.value) / 100)}
-              aria-label="Hlasitost zvuků"
-              disabled={!soundEnabled}
-            />
-            <span>{Math.round(volume * 100)} %</span>
           </div>
         </section>
 
-        <section className="settings-section">
-          <div className="settings-section-head">
-            <h3>Materiál desky</h3>
-          </div>
-          <div className="theme-grid" role="radiogroup" aria-label="Téma šachovnice">
-            {BOARD_THEMES.map((theme) => (
-              <label
-                key={theme.id}
-                className={cx('theme-option', boardTheme === theme.id && 'is-selected')}
-              >
-                <input
-                  type="radio"
-                  name="board-theme"
-                  value={theme.id}
-                  checked={boardTheme === theme.id}
-                  onChange={() => onBoardThemeChange(theme.id)}
-                  className="sr-only"
-                />
-                <span
-                  className={cx('theme-swatches', `theme-swatches--${theme.id}`)}
-                  data-theme={theme.id}
-                  aria-hidden="true"
+        <section className="settings-section" aria-labelledby="settings-board">
+          <h3 className="settings-label" id="settings-board">
+            Deska
+          </h3>
+          <div className="settings-group settings-group--padded">
+            <div className="theme-grid" role="radiogroup" aria-labelledby="settings-board">
+              {BOARD_THEMES.map((theme) => (
+                <label
+                  key={theme.id}
+                  className={cx('theme-option', boardTheme === theme.id && 'is-selected')}
+                  title={theme.description}
                 >
-                  <span />
-                  <span />
-                  <span />
-                  <span />
-                </span>
-                <span className="theme-meta">
-                  <strong>{theme.name}</strong>
-                  <span>{theme.description}</span>
-                </span>
-              </label>
-            ))}
+                  <input
+                    type="radio"
+                    name="board-theme"
+                    value={theme.id}
+                    checked={boardTheme === theme.id}
+                    onChange={() => onBoardThemeChange(theme.id)}
+                    className="sr-only"
+                  />
+                  <span className="theme-swatches" data-theme={theme.id} aria-hidden="true">
+                    <span />
+                    <span />
+                    <span />
+                    <span />
+                  </span>
+                  <span className="theme-name">{theme.name}</span>
+                </label>
+              ))}
+            </div>
           </div>
         </section>
 
-        <section className="settings-section">
-          <div className="settings-section-head">
-            <h3>Sada figur</h3>
-          </div>
-          <div className="piece-set-list" role="radiogroup" aria-label="Sada figur">
+        <section className="settings-section" aria-labelledby="settings-pieces">
+          <h3 className="settings-label" id="settings-pieces">
+            Figury
+          </h3>
+          <div className="settings-group" role="radiogroup" aria-labelledby="settings-pieces">
             {PIECE_SETS.map((set) => (
               <label key={set.id} className={cx('piece-set-option', pieceSet === set.id && 'is-selected')}>
                 <input
@@ -210,24 +211,30 @@ export function SettingsDialog({
                     {set.author} · {set.license}
                   </span>
                 </span>
+                <Check className="piece-set-check" size={18} strokeWidth={2.5} aria-hidden="true" />
               </label>
             ))}
           </div>
         </section>
 
-        <section className="settings-section settings-section--rows">
-          <SwitchRow title="Souřadnice" description="Písmena a čísla v okrajových polích.">
-            <Switch checked={showCoordinates} onChange={onShowCoordinatesChange} label="Zobrazit souřadnice" />
-          </SwitchRow>
-          <SwitchRow title="Jemné animace" description="Pohyb figur, zajetí a plynulé přechody.">
-            <Switch checked={animations} onChange={onAnimationsChange} label="Zapnout animace" />
-          </SwitchRow>
-          <SwitchRow
-            title="Ukazovat hrozby"
-            description="Proti Stockfishi: červené šipky na figury, o které můžeš přijít."
-          >
-            <Switch checked={showThreats} onChange={onShowThreatsChange} label="Ukazovat hrozby" />
-          </SwitchRow>
+        <section className="settings-section" aria-labelledby="settings-play">
+          <h3 className="settings-label" id="settings-play">
+            Hra
+          </h3>
+          <div className="settings-group">
+            <SwitchRow title="Souřadnice" description="Písmena a čísla v okrajových polích.">
+              <Switch checked={showCoordinates} onChange={onShowCoordinatesChange} label="Zobrazit souřadnice" />
+            </SwitchRow>
+            <SwitchRow title="Jemné animace" description="Pohyb figur, zajetí a plynulé přechody.">
+              <Switch checked={animations} onChange={onAnimationsChange} label="Zapnout animace" />
+            </SwitchRow>
+            <SwitchRow
+              title="Ukazovat hrozby"
+              description="Proti Stockfishi: červené šipky na figury, o které můžeš přijít."
+            >
+              <Switch checked={showThreats} onChange={onShowThreatsChange} label="Ukazovat hrozby" />
+            </SwitchRow>
+          </div>
         </section>
       </div>
     </Modal>

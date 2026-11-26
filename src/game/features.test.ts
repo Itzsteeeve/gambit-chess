@@ -14,6 +14,7 @@ import {
   plyAtX,
   plyFens,
   scoreToUnit,
+  smoothPath,
   summarizeSide,
 } from './review'
 import type { EngineAnalysis } from './uciEngine'
@@ -200,6 +201,18 @@ describe('review: eval series and summary', () => {
     expect(plyAtX(160, 300, 4)).toBe(2)
     expect(plyAtX(-20, 300, 4)).toBe(0)
     expect(plyAtX(999, 300, 4)).toBe(3)
+  })
+
+  it('draws a monotone curve that never overshoots the evaluations', () => {
+    const points = graphPoints([0, 0.9, 1, 1, -1], 400, 100, 0)
+    const path = smoothPath(points)
+    expect(path.startsWith('M0.0 50.0')).toBe(true)
+    expect(path.endsWith('400.0 100.0')).toBe(true)
+    const numbers = path.match(/-?\d+\.\d/g)!.map(Number)
+    const ys = numbers.filter((_, index) => index % 2 === 1)
+    expect(Math.min(...ys)).toBeGreaterThanOrEqual(0)
+    expect(Math.max(...ys)).toBeLessThanOrEqual(100)
+    expect(smoothPath([])).toBe('')
   })
 
   it('summarises each side and finds the next mistake (wrapping)', () => {
