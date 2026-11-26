@@ -117,35 +117,6 @@ html[data-motion='off'] .app::before {
   backdrop-filter: blur(var(--glass-blur-thick)) saturate(var(--glass-saturate));
 }
 
-/* Pointer light: a soft specular spot that follows the cursor across the
-   glass (coordinates from lib/useGlassLight.ts) and glides after it. */
-@property --mx {
-  syntax: '<length-percentage>';
-  inherits: false;
-  initial-value: 50%;
-}
-
-@property --my {
-  syntax: '<length-percentage>';
-  inherits: false;
-  initial-value: -60%;
-}
-
-.header-inner,
-.side-panel-inner,
-.start-card,
-.board-toolbar,
-.modal-panel {
-  background-image: radial-gradient(
-    320px circle at var(--mx) var(--my),
-    var(--glass-specular),
-    transparent 70%
-  );
-  transition:
-    --mx 420ms var(--ease-out),
-    --my 420ms var(--ease-out);
-}
-
 /* Light edge: brighter at the top, fading towards the bottom, drawn as a
    1px ring with a mask so the fill underneath stays translucent. */
 .header-inner::before,

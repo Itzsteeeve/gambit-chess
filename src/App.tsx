@@ -66,7 +66,6 @@ import { useChessGame } from './game/useChessGame'
 import { useEngineAnalysis, useStockfishPlay } from './game/useStockfish'
 import { copyText } from './lib/clipboard'
 import { isAppearance, useApplyAppearance } from './lib/appearance'
-import { useGlassLight } from './lib/useGlassLight'
 import type { Appearance } from './lib/appearance'
 import { useSound } from './lib/useSound'
 import { useSpeech } from './lib/useSpeech'
@@ -155,7 +154,6 @@ export default function App() {
     isBoolean,
   )
   useApplyAppearance(appearance, reduceTransparency)
-  useGlassLight()
   const [showCoordinates, setShowCoordinates] = useStoredState('gambit.coordinates', true, isBoolean)
   const [animations, setAnimations] = useStoredState('gambit.animations', true, isBoolean)
   const [storedTempo, setStoredTempo] = useStoredState('gambit.tempo', 'none', isTempoId)
