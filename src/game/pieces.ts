@@ -96,7 +96,7 @@ export function findKing(pieces: GamePiece[], color: Color): GamePiece | undefin
 export function getSquareFromPoint(
   clientX: number,
   clientY: number,
-  rect: DOMRect,
+  rect: { left: number; top: number; width: number; height: number },
   orientation: Color,
 ): Square | null {
   if (rect.width <= 0 || rect.height <= 0) return null

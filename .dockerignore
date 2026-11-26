@@ -4,3 +4,4 @@ dist
 .claude
 *.log
 .env
+dist-server

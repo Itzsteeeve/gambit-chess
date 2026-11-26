@@ -13,11 +13,17 @@ npm run engine:copy  # re-copy Stockfish files if public/engine is missing
 npm test           # vitest run (node env, config in vitest.config.ts, tests in src/**/*.test.ts)
 ```
 
-No linter is configured. Verify with `npx tsc -b` (strict) and `npm test`. No git repo.
+No linter is configured. Verify with `npx tsc -b` (strict, also checks `server/` via tsconfig.server.json) and `npm test` (src and server tests).
+
+```bash
+npm run build:server # bundle server/index.ts (deps included) into dist-server/index.js
+npm start            # serve dist/ + online WebSocket (BASE_PATH, PORT, STATIC_DIR env)
+npm run dev:server   # build and run the server on :4173; `npm run dev` proxies /ws to it
+```
 
 ## What this is
 
-"Gambit" — a Czech-language, client-only React 19 + Vite + TypeScript chess app (chess.js for rules, Stockfish 19 lite WASM in Web Workers). All UI strings are Czech. Everything runs offline; no backend. `README.md` (Czech, user-facing) and `DESIGN.md` (design rules) are current; `src/styles/tokens.css` is the source of truth for visuals.
+"Gambit" — a Czech-language, client-only React 19 + Vite + TypeScript chess app (chess.js for rules, Stockfish 19 lite WASM in Web Workers). All UI strings are Czech. Offline play needs no backend; online multiplayer uses a small Node server (see below). `README.md` (Czech, user-facing) and `DESIGN.md` (design rules) are current; `src/styles/tokens.css` is the source of truth for visuals.
 
 ## Architecture
 
@@ -54,3 +60,5 @@ No linter is configured. Verify with `npx tsc -b` (strict) and `npm test`. No gi
 **Persistence.** `useStoredState(key, initial, validate?)` (localStorage, keys `gambit.*`; invalid values fall back to the default) for mode, level, orientation, appearance, reduced transparency, board theme, coordinates, animations, tempo, player colour, handicap. Piece set lives in `pieceSets.ts` (`usePieceSet`, key `gambit.piece-set`).
 
 **Styling ("Gambit Glass").** Plain CSS imported in order from `main.tsx`: `tokens → base → layout → board → pieces → panels → dialogs → ratings → glass → responsive`. `tokens.css` holds primitives plus two appearance sets (`html[data-appearance='dark'|'light']`) and the glass materials; `glass.css` maps components onto the thin/regular/thick materials and draws the ambient backdrop (`.app::before`), so component sheets keep layout and `glass.css` decides fills, blur, edges and shape. Appearance: `gambit.appearance` (`system|light|dark`) and `gambit.reduce-transparency`, applied by `useApplyAppearance` (`lib/appearance.ts`); the inline script in `index.html` sets the same attributes before first paint, keep the two in step. `html.liquid` (set in `main.tsx` for Chromium) enables the `#liquid-glass` SVG filter rendered in `App`. `--primary` is a calm green for the UI; chess "good" (best move, arrows) is `--good`. Avoid anything that reads as generated (neon, purple gradients, coloured glows); see `DESIGN.md`. Board themes are `[data-theme=...]` token sets (`BOARD_THEMES` in `game/constants.ts`: emerald, walnut, midnight, blush, slate, frost). Piece sets: `ivory` (own SVG, `PieceArt.tsx` + `PieceDefs.tsx`), `chessnut`, `terracotta` (bundled SVGs in `src/assets/pieces`, licenses in `THIRD_PARTY.md`). `html[data-motion]` toggles animations; `prefers-reduced-motion` must be respected.
+
+**Online multiplayer — `server/` + `src/online/protocol.ts`.** One Node process (`server/index.ts`, plain `node:http` + `ws`) serves the built app under `BASE_PATH` (`/healthz` for the Docker healthcheck) and a JSON WebSocket at `${BASE_PATH}ws`. `protocol.ts` holds the shared message types, Czech error texts and nick/room-code rules; keep it free of DOM and Node APIs. `server/rooms.ts` (`RoomManager`, unit-tested, time passed in, randomness injected) is authoritative: players (nickname + resume token, no accounts), public/private rooms with 5-letter codes, quick pairing (joins the oldest public room with the same time control and starts at once, else opens one), host-started games with server-random colours, chess.js move validation, clocks (run once both sides have moved; increment from then on), abort if a first move does not come within 30 s, abandonment after 60 s disconnected, draw offers (one per move, cleared when the opponent moves), rematch with swapped colours, cleanup of idle rooms. All rooms are in memory, so a restart ends running games. The server bundle is built by `vite build --ssr` with `ssr.noExternal`, so the runtime image has no node_modules. Behind nginx the `/chess/` location needs WebSocket upgrade headers (`deploy/nginx-chess.conf`).

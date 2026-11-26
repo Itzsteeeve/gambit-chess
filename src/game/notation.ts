@@ -15,6 +15,8 @@ export type GameReason =
   | 'record'
   /** Imported game whose record has no result. */
   | 'unfinished'
+  /** Online game: a player stayed disconnected past the grace period. */
+  | 'abandonment'
 
 export interface GameOutcome {
   winner: Color | null
@@ -39,6 +41,7 @@ export const REASON_LABELS: Record<GameReason, string> = {
   draw: 'Remíza',
   record: 'Výsledek ze zápisu',
   unfinished: 'Zápis končí bez výsledku',
+  abandonment: 'Soupeř opustil partii',
 }
 
 /** Full-move number of a FEN. */
