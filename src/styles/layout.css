@@ -332,6 +332,7 @@
 
 /* Strips and toolbar line up with the board, not with the eval bar. */
 .board-column > .player-strip,
+.board-column > .training-strip,
 .board-column > .board-toolbar,
 .board-column > .review-bar {
   width: auto;
@@ -405,6 +406,136 @@
 .engine-error-retry {
   min-height: var(--control-sm);
   flex: 0 0 auto;
+}
+
+/* ------------------------------------------------------------------ */
+/* Training: the game layout with quiet strips instead of players     */
+/* ------------------------------------------------------------------ */
+
+.training-strip {
+  display: flex;
+  height: var(--strip-h);
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-soft);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+}
+
+.training-next:disabled {
+  opacity: 0.45;
+}
+
+.training-next {
+  margin-left: auto;
+}
+
+.training-head {
+  display: flex;
+  padding: var(--space-3) var(--space-4);
+  flex: 0 0 auto;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  border-bottom: 1px solid var(--line);
+}
+
+.training-head h1 {
+  color: var(--text-bright);
+  font-size: var(--fs-md);
+}
+
+.training-head span {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.training-feedback {
+  display: flex;
+  min-height: 92px;
+  padding: var(--space-4);
+  flex: 0 0 auto;
+  align-items: flex-start;
+  gap: var(--space-3);
+  border-bottom: 1px solid var(--line);
+}
+
+.training-feedback strong {
+  color: var(--text-bright);
+  font-size: var(--fs-md);
+}
+
+.training-feedback p {
+  margin-top: var(--space-1);
+  color: var(--text-soft);
+  font-size: var(--fs-sm);
+}
+
+.training-done {
+  display: flex;
+  padding: var(--space-3) var(--space-4);
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  border-bottom: 1px solid var(--line);
+  font-size: var(--fs-sm);
+}
+
+.training-list {
+  min-height: 0;
+  margin: 0;
+  padding: var(--space-2);
+  flex: 1;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.training-item {
+  display: flex;
+  width: 100%;
+  min-height: var(--control-md);
+  padding: 0 var(--space-2);
+  align-items: center;
+  gap: var(--space-2);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-sm);
+  transition: background-color var(--dur-fast) var(--ease-out);
+}
+
+.training-item:hover {
+  background: var(--hover-wash);
+}
+
+.training-item.is-current {
+  background: var(--surface-3);
+}
+
+.training-item strong {
+  color: var(--text);
+}
+
+.training-item > span:not(.rating-badge) {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+
+.training-check {
+  flex: 0 0 auto;
+  color: var(--primary);
+}
+
+.training-empty {
+  display: flex;
+  max-width: 420px;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  color: var(--muted);
+  text-align: center;
 }
 
 /* ------------------------------------------------------------------ */

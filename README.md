@@ -10,17 +10,22 @@ Chess in the browser. Play against Stockfish 19 (from 250 Elo up to full strengt
 - **Hints** (first click selects a piece, second click shows the move arrow) and a **coach**: every move you make is rated (brilliant … blunder) with accuracy, and explained in Czech: why it is good or bad (hanging piece, fork, mate, lost or missed material, opening principles) and what was better. A concrete reason is only given when both the board and the engine line support it; otherwise the coach just names the better move.
 - **Coach demonstrations**: "Ukaž problém" draws the punishing reply, "Lepší tah" shows the better move; the engine and the clocks wait meanwhile. "Zkusit znovu" takes a bad move back.
 - **Threat arrows** (Settings, off by default): red arrows on your pieces Stockfish could profitably take.
+- **Rating animations**: every verdict lands with its own short animation in the side panel and the move list. **Brilliant** and **great** moves also have their own sounds, a wash over the coach and an effect on the board.
+- **Opening names**: the Game panel and the result dialog name the opening in Czech (about 160 positions, transpositions included).
+- **Mistake training** ("Trénink chyb" on the start screen, "Procvičit chyby" in the result dialog): your mistakes, blunders and missed wins are saved as puzzles. Find a better move; Stockfish accepts any move about as good as its own. Up to 100 puzzles are kept in this browser (imported games are not added).
 - **Read aloud** (off by default): the coach speaks its comments if the browser has a Czech voice (on Windows it may need to be installed in the language settings).
 - **Evaluation bar** and **evaluation graph** in the Game panel (live) and in the result dialog; clicking the graph jumps to that move, coloured marks show blunders, mistakes and brilliant moves.
 - **Game review**: clicking a move in the list shows that position read-only (←/→, Home/End, "Back to game"). The best move arrow and the move rating are shown for the viewed position, and the coach comments on the viewed move.
-- **Post-game analysis**: accuracy and counts of best/good moves, inaccuracies, mistakes and blunders for both sides, a "Next mistake" button and up to three **key moments** with the coach's explanation. Unanalysed positions are completed in the background after the game (also in local games), with a progress indicator.
+- **Post-game analysis**: accuracy and the count of every rating (brilliant, great, best … blunder) for both sides, a list of the brilliant and great moves, a "Next mistake" button and up to three **key moments** with the coach's explanation. Unanalysed positions are completed in the background after the game (also in local games), with a progress indicator.
+- **Play from here** ("Hrát odsud"): while reviewing, or after a game that ended on a playable position, start a new game from the shown position. A dialog picks the opponent, level, colour and clock; "Odveta" and a level change replay the same position.
+- **Import** ("Importovat partii" on the start screen, "Import" under the move list): paste a **PGN** to open it in review with the coach, accuracies and the graph, or a **FEN** to play from that position. From a PGN only the main line of the first game is read; chess variants are refused, as are illegal positions.
 - **Premoves**: while Stockfish thinks you can queue your next move (blue highlight and arrow); it plays itself once it is your turn and the move is still legal. Right click or Esc cancels it.
 - **Arrows and marks**: right-drag draws arrows, right-click draws circles; Shift = red, Ctrl = orange, Alt = blue. They disappear on the next move or left click.
 - Clocks (none, 3+2, 5+0, 10+0, 15+10), resign, draw by agreement, rematch, undo/redo, board flip, PGN and FEN to clipboard.
 - 5 board themes (Emerald, Walnut, Midnight, Blush, Slate) and 3 piece sets (Chessnut by default, Ivory & Onyx, Terracotta), switchable in the "Sada" tab or in Settings.
 - The "Partie" tab holds the coach, both accuracies with the evaluation graph and the move list.
 - Sounds, animations (can be turned off; `prefers-reduced-motion` is respected), responsive layout down to 320 px.
-- Settings are stored in `localStorage` (keys `gambit.*`); a game in progress is intentionally not saved, so reloading the page shows the start screen.
+- Settings and training puzzles are stored in `localStorage` (keys `gambit.*`), so each browser has its own; a game in progress is intentionally not saved, so reloading the page shows the start screen.
 
 ## Controls
 

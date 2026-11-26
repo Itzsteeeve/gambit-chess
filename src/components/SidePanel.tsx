@@ -32,10 +32,13 @@ interface SidePanelProps {
   /** Coach and analysis, shown at the top of the "Partie" tab. */
   coach?: ReactNode
   analysis?: ReactNode
+  opening?: string
   modeLabel?: string
   engineLabel?: string
   onCopyPgn: () => void
   onCopyFen: () => void
+  onImport: () => void
+  customStart?: boolean
   /** Optional move-list column labels, e.g. "Ty" / "Stockfish". */
   whiteLabel?: string
   blackLabel?: string
@@ -57,10 +60,13 @@ export function SidePanel({
   ratings,
   coach,
   analysis,
+  opening,
   modeLabel,
   engineLabel,
   onCopyPgn,
   onCopyFen,
+  onImport,
+  customStart,
   whiteLabel,
   blackLabel,
   viewPly,
@@ -122,8 +128,11 @@ export function SidePanel({
               ratings={ratings}
               coach={coach}
               analysis={analysis}
+              opening={opening}
               onCopyPgn={onCopyPgn}
               onCopyFen={onCopyFen}
+              onImport={onImport}
+              customStart={customStart}
               whiteLabel={whiteLabel}
               blackLabel={blackLabel}
               viewPly={viewPly}

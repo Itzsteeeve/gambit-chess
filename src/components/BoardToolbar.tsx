@@ -1,4 +1,4 @@
-import { ArrowDownUp, Flag, Handshake, Lightbulb, Loader2, Redo2, Trophy, Undo2 } from 'lucide-react'
+import { ArrowDownUp, Flag, Handshake, Lightbulb, Loader2, Redo2, Swords, Trophy, Undo2 } from 'lucide-react'
 import { IconButton } from './IconButton'
 
 interface BoardToolbarProps {
@@ -16,6 +16,8 @@ interface BoardToolbarProps {
   onDraw: () => void
   onHint?: () => void
   onShowResult: () => void
+  /** Offered after a game whose final position can still be played. */
+  onPlayFrom?: () => void
 }
 
 export function BoardToolbar({
@@ -33,6 +35,7 @@ export function BoardToolbar({
   onDraw,
   onHint,
   onShowResult,
+  onPlayFrom,
 }: BoardToolbarProps) {
   return (
     <div className="board-toolbar" role="toolbar" aria-label="Ovládání partie">
@@ -65,15 +68,23 @@ export function BoardToolbar({
       <div className="toolbar-spacer" />
 
       {gameOver ? (
-        <button
-          type="button"
-          className="toolbar-result-button"
-          onClick={onShowResult}
-          aria-label="Zobrazit výsledek"
-        >
-          <Trophy size={16} />
-          <span>Zobrazit výsledek</span>
-        </button>
+        <>
+          {onPlayFrom ? (
+            <button type="button" className="toolbar-text-button" onClick={onPlayFrom} aria-label="Hrát odsud">
+              <Swords size={17} />
+              <span>Hrát odsud</span>
+            </button>
+          ) : null}
+          <button
+            type="button"
+            className="toolbar-result-button"
+            onClick={onShowResult}
+            aria-label="Zobrazit výsledek"
+          >
+            <Trophy size={16} />
+            <span>Zobrazit výsledek</span>
+          </button>
+        </>
       ) : (
         <>
           {onHint ? (

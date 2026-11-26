@@ -1,5 +1,5 @@
 import type { Color } from 'chess.js'
-import { Play, SlidersHorizontal, Users } from 'lucide-react'
+import { Dumbbell, Import, Play, SlidersHorizontal, Users } from 'lucide-react'
 import type { BoardThemeId } from '../game/constants'
 import { getDisplayPosition } from '../game/pieces'
 import type { GamePiece } from '../game/pieces'
@@ -19,6 +19,10 @@ interface StartScreenProps {
   onContinue: () => void
   onCustomize: () => void
   onLocal: () => void
+  onImport: () => void
+  onTrain: () => void
+  /** Unsolved training puzzles. */
+  openPuzzles: number
 }
 
 const SQUARES = Array.from({ length: 64 }, (_, index) => index)
@@ -35,6 +39,9 @@ export function StartScreen({
   onContinue,
   onCustomize,
   onLocal,
+  onImport,
+  onTrain,
+  openPuzzles,
 }: StartScreenProps) {
   return (
     <section className="start-screen" aria-labelledby="start-title">
@@ -98,6 +105,14 @@ export function StartScreen({
             <button type="button" className="text-action" onClick={onLocal}>
               <Users size={15} />
               Dva hráči lokálně
+            </button>
+            <button type="button" className="text-action" onClick={onImport}>
+              <Import size={15} />
+              Importovat partii
+            </button>
+            <button type="button" className="text-action" onClick={onTrain}>
+              <Dumbbell size={15} />
+              Trénink chyb{openPuzzles > 0 ? ` (${openPuzzles})` : ''}
             </button>
           </div>
         </div>

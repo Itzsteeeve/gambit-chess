@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
 import type { Color, Move } from 'chess.js'
-import { Copy, FileBraces, FileText, Swords } from 'lucide-react'
+import { BookOpen, Copy, FileBraces, FileText, Import, Swords } from 'lucide-react'
 import { PIECE_LABELS, COLOR_LABELS } from '../game/constants'
 import type { RatedMove } from '../game/moveRating'
 import { MOVE_RATING_META } from '../game/moveRating'
@@ -19,8 +19,13 @@ interface MoveListProps {
   coach?: ReactNode
   /** Review strip with the evaluation graph, rendered above the list. */
   analysis?: ReactNode
+  /** Name of the opening in the shown position; omitted for custom start positions. */
+  opening?: string
   onCopyPgn: () => void
   onCopyFen: () => void
+  onImport: () => void
+  /** The game began from a custom position, so the usual opening advice is dropped. */
+  customStart?: boolean
   /** Optional column header labels (default: Bílý / Černý). */
   whiteLabel?: string
   blackLabel?: string
@@ -54,8 +59,11 @@ export function MoveList({
   ratings = {},
   coach,
   analysis,
+  opening,
   onCopyPgn,
   onCopyFen,
+  onImport,
+  customStart = false,
   whiteLabel = 'Bílý',
   blackLabel = 'Černý',
   viewPly,
@@ -66,8 +74,14 @@ export function MoveList({
   const pairs = groupMoves(history)
   const shownPly = viewPly ?? history.length
   const reviewing = shownPly !== history.length
-  // A game may start with Black to move only from a custom FEN; ours always start with White.
   const plyOf = (move: Move) => history.indexOf(move) + 1
+  const landingKey = (move: Move) => `${move.after}|${ratings[move.after]?.rating}`
+  /** Verdicts already there when the list appeared; only later ones animate. */
+  const settledRef = useRef<Set<string> | null>(null)
+  if (settledRef.current === null) {
+    settledRef.current = new Set(history.filter((move) => ratings[move.after]).map(landingKey))
+  }
+  const lands = (move: Move) => Boolean(ratings[move.after]) && !settledRef.current!.has(landingKey(move))
 
   useEffect(() => {
     const container = scrollRef.current
@@ -113,6 +127,12 @@ export function MoveList({
 
       {coach}
       {analysis}
+      {opening ? (
+        <p className="opening-line" title={opening}>
+          <BookOpen size={14} aria-hidden="true" />
+          <span>{opening}</span>
+        </p>
+      ) : null}
 
       <div className="move-list" ref={scrollRef}>
         {pairs.length === 0 ? (
@@ -121,12 +141,17 @@ export function MoveList({
               <Swords size={24} strokeWidth={1.75} />
             </div>
             <h3>Deska je připravená</h3>
-            <p>Bílý otevírá partii. Vyber figuru a táhni — nebo klikni na výchozí a cílové pole.</p>
-            <div className="move-empty-hint">
-              <span>1. e4</span>
-              <span>1. d4</span>
-              <span>1. Nf3</span>
-            </div>
+            <p>
+              {customStart ? `Na tahu je ${turn === 'w' ? 'bílý' : 'černý'}.` : 'Bílý otevírá partii.'} Vyber figuru a
+              táhni — nebo klikni na výchozí a cílové pole.
+            </p>
+            {customStart ? null : (
+              <div className="move-empty-hint">
+                <span>1. e4</span>
+                <span>1. d4</span>
+                <span>1. Nf3</span>
+              </div>
+            )}
           </div>
         ) : (
           <div className="moves-table-wrap">
@@ -150,6 +175,7 @@ export function MoveList({
                     side="white"
                     isCurrent={Boolean(pair.white) && plyOf(pair.white!) === shownPly}
                     rating={pair.white ? ratings[pair.white.after] : undefined}
+                    lands={Boolean(pair.white) && lands(pair.white!)}
                     onSelect={onSelectPly && pair.white ? () => onSelectPly(plyOf(pair.white!)) : undefined}
                   />
                   {pair.black ? (
@@ -158,6 +184,7 @@ export function MoveList({
                       side="black"
                       isCurrent={plyOf(pair.black) === shownPly}
                       rating={ratings[pair.black.after]}
+                      lands={lands(pair.black)}
                       onSelect={onSelectPly ? () => onSelectPly(plyOf(pair.black!)) : undefined}
                     />
                   ) : (
@@ -183,6 +210,10 @@ export function MoveList({
           <span>FEN</span>
           <Copy size={13} className="copy-icon" />
         </button>
+        <button type="button" className="copy-button" onClick={onImport} aria-label="Importovat partii">
+          <Import size={15} />
+          <span>Import</span>
+        </button>
       </div>
     </div>
   )
@@ -193,12 +224,15 @@ function MoveCell({
   side,
   isCurrent,
   rating,
+  lands,
   onSelect,
 }: {
   move?: Move
   side: 'white' | 'black'
   isCurrent: boolean
   rating?: RatedMove
+  /** The verdict has just arrived and animates in. */
+  lands: boolean
   onSelect?: () => void
 }) {
   if (!move) {
@@ -233,7 +267,11 @@ function MoveCell({
       aria-current={isCurrent ? 'step' : undefined}
     >
       <span className="move-cell-badge-slot">
-        {rating ? <MoveRatingBadge rating={rating.rating} size="xs" /> : null}
+        {rating ? (
+          <span key={rating.rating} className={cx(lands && 'rating-fx')}>
+            <MoveRatingBadge rating={rating.rating} size="xs" />
+          </span>
+        ) : null}
       </span>
       <span className="move-san">{move.san}</span>
     </Tag>

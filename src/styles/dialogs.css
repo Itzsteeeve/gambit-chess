@@ -292,8 +292,52 @@ html[data-motion='off'] .mode-toggle::before {
   gap: var(--space-4);
 }
 
+.new-game-row.new-game-row--single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .new-game-row legend label {
   cursor: pointer;
+}
+
+/* Import ----------------------------------------------------------- */
+
+.import-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.import-text {
+  width: 100%;
+  min-height: 120px;
+  padding: var(--space-3);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+  color: var(--text);
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.import-text::placeholder {
+  color: var(--faint);
+}
+
+.import-text:hover {
+  border-color: var(--muted);
+}
+
+.import-text[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+
+.import-error {
+  margin-top: var(--space-2);
+  color: var(--danger);
+  font-size: var(--fs-sm);
+  overflow-wrap: anywhere;
 }
 
 .select {
@@ -1079,6 +1123,15 @@ html[data-motion='off'] .mode-toggle::before {
   line-height: 1.2;
 }
 
+/* Imported games have no duration; the compound selector also holds on phones. */
+.result-stats.result-stats--three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.result-stats.result-stats--three > div:nth-child(3) {
+  border-left: 1px solid var(--line);
+}
+
 .result-review {
   display: flex;
   width: 100%;
@@ -1162,34 +1215,67 @@ html[data-motion='off'] .mode-toggle::before {
   font-size: var(--fs-md);
 }
 
-.review-dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
+.review-table-badge {
+  display: inline-flex;
   margin-right: var(--space-2);
-  border-radius: 50%;
-  background: var(--dot, var(--faint));
   vertical-align: middle;
 }
 
-.review-table-row--best .review-dot {
-  --dot: var(--tone-best);
+/* Ten rows: tighter than the accuracy row, and quiet while nothing was found. */
+.review-table-row th,
+.review-table-row td {
+  height: 28px;
 }
 
-.review-table-row--good .review-dot {
-  --dot: var(--muted);
+.review-table-row:not(.is-found) th {
+  color: var(--faint);
 }
 
-.review-table-row--inaccuracy .review-dot {
-  --dot: var(--tone-inaccuracy);
+.review-table-row:not(.is-found) .review-table-badge {
+  opacity: 0.35;
 }
 
-.review-table-row--mistake .review-dot {
-  --dot: var(--tone-mistake);
+.review-table-row--brilliant.is-found th,
+.review-table-row--great.is-found th {
+  color: var(--row-tone);
+  font-weight: var(--fw-semibold);
 }
 
-.review-table-row--blunder .review-dot {
-  --dot: var(--tone-blunder);
+.result-opening {
+  margin-top: var(--space-1);
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  text-align: center;
+}
+
+.highlight-moves {
+  flex-direction: row !important;
+  flex-wrap: wrap;
+}
+
+.highlight-move {
+  display: inline-flex;
+  min-height: var(--control-md);
+  padding: var(--space-1) var(--space-3) var(--space-1) var(--space-2);
+  align-items: center;
+  gap: var(--space-2);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  font-size: var(--fs-sm);
+  transition: background-color var(--dur-fast) var(--ease-out);
+}
+
+.highlight-move:hover {
+  background: var(--surface-3);
+}
+
+.highlight-move strong {
+  color: var(--text);
+}
+
+.highlight-move > span:last-child {
+  color: var(--muted);
+  font-size: var(--fs-xs);
 }
 
 .key-moments {

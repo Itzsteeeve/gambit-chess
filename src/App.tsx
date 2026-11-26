@@ -12,8 +12,10 @@ import { ConfirmDialog } from './components/ConfirmDialog'
 import { EvalBar } from './components/EvalBar'
 import type { GraphMarker } from './components/EvalGraph'
 import { GameOverDialog } from './components/GameOverDialog'
-import type { KeyMoment } from './components/GameOverDialog'
+import type { HighlightMove, KeyMoment } from './components/GameOverDialog'
 import { Header } from './components/Header'
+import { ImportDialog } from './components/ImportDialog'
+import type { ImportedContent } from './components/ImportDialog'
 import { MoveClassificationDialog } from './components/MoveClassificationDialog'
 import { NewGameDialog } from './components/NewGameDialog'
 import type { NewGameSettings } from './components/NewGameDialog'
@@ -24,6 +26,7 @@ import { SettingsDialog } from './components/SettingsDialog'
 import { SidePanel } from './components/SidePanel'
 import { StartScreen } from './components/StartScreen'
 import { Toast } from './components/Toast'
+import { TrainingScreen } from './components/TrainingScreen'
 import {
   BOARD_THEMES,
   COLOR_CHOICES,
@@ -46,12 +49,17 @@ import {
 } from './game/engineLevels'
 import type { EngineLevel, GameMode } from './game/engineLevels'
 import { timeoutOutcome } from './game/gameModel'
-import { HANDICAPS, handicapFen, isHandicapId } from './game/handicap'
+import { DEFAULT_FEN, HANDICAPS, handicapFen, isHandicapId } from './game/handicap'
 import type { HandicapId } from './game/handicap'
+import { isPlayablePosition } from './game/importGame'
+import type { ImportedGame } from './game/importGame'
 import { evalToWhite, materialBalance, MOVE_RATING_META } from './game/moveRating'
-import { capturedPieces, REASON_LABELS, resultHeadline } from './game/notation'
+import { capturedPieces, fenMoveNumber, moveLabel, REASON_LABELS, resultHeadline } from './game/notation'
+import { openingName } from './game/openings'
 import { premovePromotion, premoveTargets } from './game/premove'
-import { fenTurn, keyMoments, nextMistakePly } from './game/review'
+import { collectPuzzles, isPuzzleList, mergePuzzles } from './game/puzzles'
+import type { Puzzle } from './game/puzzles'
+import { fenTurn, highlightMoves, keyMoments, nextMistakePly } from './game/review'
 import { useChessClock } from './game/useChessClock'
 import type { ClockSnapshot } from './game/useChessClock'
 import { useChessGame } from './game/useChessGame'
@@ -62,8 +70,8 @@ import { useSpeech } from './lib/useSpeech'
 import { isBoolean, isOneOf, useStoredState } from './lib/storage'
 import { useToasts } from './lib/useToasts'
 
-type DialogId = 'new' | 'settings' | 'resign' | 'draw' | 'ratings' | null
-type Screen = 'home' | 'game'
+type DialogId = 'new' | 'position' | 'import' | 'settings' | 'resign' | 'draw' | 'ratings' | null
+type Screen = 'home' | 'game' | 'training'
 
 interface CoachDemo {
   /** Index of the discussed move in the history. */
@@ -144,6 +152,10 @@ export default function App() {
   const [storedHandicap, setStoredHandicap] = useStoredState<HandicapId>('gambit.handicap', 'none', isHandicapId)
   const [showThreats, setShowThreats] = useStoredState('gambit.threats', false, isBoolean)
   const [coachVoice, setCoachVoice] = useStoredState('gambit.coach-voice', false, isBoolean)
+  /** Positions from the player's mistakes, for the training screen. */
+  const [puzzles, setPuzzles] = useStoredState<Puzzle[]>('gambit.puzzles', [], isPuzzleList)
+  /** Puzzle the training opens with (null = the newest unsolved one). */
+  const [trainingStart, setTrainingStart] = useState<string | null>(null)
 
   const engineLevel = useMemo(() => getEngineLevel(engineLevelId), [engineLevelId])
 
@@ -153,6 +165,12 @@ export default function App() {
   const [humanColor, setHumanColor] = useState<Color>('w')
   const engineColor = opposite(humanColor)
   const [gameHandicap, setGameHandicap] = useState<HandicapId>('none')
+  /** Position the current game was started from by "Hrát odsud" or a FEN import. */
+  const [positionStart, setPositionStart] = useState<string | null>(null)
+  /** Position offered by the "Hrát z pozice" dialog. */
+  const [positionOffer, setPositionOffer] = useState<{ fen: string; color: Color } | null>(null)
+  /** Set while the board shows an imported game record. */
+  const [imported, setImported] = useState<ImportedGame | null>(null)
 
   const [timeControl, setTimeControl] = useState<TimeControl>(() => getTimeControl(storedTempo))
   const [selected, setSelected] = useState<Square | null>(null)
@@ -186,7 +204,10 @@ export default function App() {
   /** Clock times for each ply reached (index = number of moves played). */
   const clockHistoryRef = useRef<ClockSnapshot[]>([initialClock(timeControl)])
 
-  const isEngineGame = gameMode === 'stockfish'
+  // An imported record is neutral, whatever mode the next game will be played in.
+  const isEngineGame = gameMode === 'stockfish' && !imported
+  /** The opening book and opening advice only apply from the standard position. */
+  const standardStart = game.startFen === DEFAULT_FEN
   /** Eval bar, coach and live move ratings only make sense against Stockfish. */
   const showAnalysis = isEngineGame
   /** Local games are analysed once they are over (post-game review). */
@@ -208,7 +229,7 @@ export default function App() {
     humanColor,
     gameNumber: game.gameNumber,
     startFen: game.startFen,
-    allowBook: gameHandicap === 'none',
+    allowBook: standardStart,
   })
 
   const engineError =
@@ -250,7 +271,7 @@ export default function App() {
     [gameTimeout, getFen, playSound],
   )
 
-  const clockPaused = gameOverOpen || dialog !== null || promotion !== null || demoActive || screen === 'home'
+  const clockPaused = gameOverOpen || dialog !== null || promotion !== null || demoActive || screen !== 'game'
   const clock = useChessClock({
     timeControl,
     activeColor: game.turn,
@@ -260,11 +281,12 @@ export default function App() {
     onTimeout: handleTimeout,
   })
 
-  // Open the result card whenever a new result is produced.
+  // Open the result card whenever a new result is produced. An imported game
+  // opens in review instead; the card stays one click away.
   useEffect(() => {
-    setGameOverOpen(Boolean(game.outcome))
+    setGameOverOpen(Boolean(game.outcome) && !imported)
     if (game.outcome) setPremove(null)
-  }, [game.outcome])
+  }, [game.outcome, imported])
 
   // Track the active game duration for the result card.
   useEffect(() => {
@@ -673,8 +695,8 @@ export default function App() {
     return true
   }, [premove, premoveMode, selected])
 
-  /** Fewest plies that must stay on the board (Black's first move is Stockfish's). */
-  const keepPlies = isEngineGame && humanColor === 'b' ? 1 : 0
+  /** Fewest plies that must stay on the board (an opening move by Stockfish). */
+  const keepPlies = isEngineGame && fenTurn(game.startFen) !== humanColor ? 1 : 0
   const undoPlies = isEngineGame && game.turn === humanColor ? 2 : 1
   const canUndoNow = game.canUndo && !isUndoing && history.length - undoPlies >= keepPlies
 
@@ -735,33 +757,10 @@ export default function App() {
     sound.play('ui')
   }, [setOrientation, sound])
 
-  const startNewGame = useCallback(
-    (settings: NewGameSettings) => {
-      const { mode, levelId, timeControl: nextTimeControl, color, handicap } = settings
-      setGameMode(mode)
-      setEngineLevelId(levelId)
-      setColorChoice(color)
-      setStoredHandicap(handicap)
-      setTimeControl(nextTimeControl)
-      setStoredTempo(nextTimeControl.id)
-
-      const engine = mode === 'stockfish'
-      const human = engine ? resolveColorChoice(color) : 'w'
-      const level = getEngineLevel(levelId)
-      const activeHandicap = engine ? handicap : 'none'
-      setHumanColor(human)
-      setGameHandicap(activeHandicap)
-      // Face your own pieces: the board turns to the player's colour.
-      setOrientation(engine ? human : 'w')
-
-      const engineName = `Stockfish (${eloLabel(level)})`
-      clockHistoryRef.current = [initialClock(nextTimeControl)]
-      game.reset({
-        fen: activeHandicap === 'none' ? undefined : handicapFen(activeHandicap, opposite(human)),
-        event: engine ? 'Gambit — partie proti Stockfishi' : undefined,
-        white: engine ? (human === 'w' ? 'Hráč' : engineName) : undefined,
-        black: engine ? (human === 'b' ? 'Hráč' : engineName) : undefined,
-      })
+  /** Clears everything that belonged to the previous game and shows the board. */
+  const enterGame = useCallback(
+    (clockSettings: TimeControl) => {
+      clockHistoryRef.current = [initialClock(clockSettings)]
       setSelected(null)
       setPromotion(null)
       setCaptureFx(null)
@@ -778,7 +777,44 @@ export default function App() {
       startTimeRef.current = null
       sound.play('ui')
     },
+    [sound],
+  )
+
+  const startNewGame = useCallback(
+    (settings: NewGameSettings) => {
+      const { mode, levelId, timeControl: nextTimeControl, color, handicap, startFen } = settings
+      setGameMode(mode)
+      setEngineLevelId(levelId)
+      // A game from a position is a one-off: it leaves these preferences alone.
+      if (!startFen) {
+        setColorChoice(color)
+        setStoredHandicap(handicap)
+      }
+      setTimeControl(nextTimeControl)
+      setStoredTempo(nextTimeControl.id)
+
+      const engine = mode === 'stockfish'
+      const human = engine ? resolveColorChoice(color) : 'w'
+      const level = getEngineLevel(levelId)
+      const activeHandicap = engine && !startFen ? handicap : 'none'
+      setHumanColor(human)
+      setGameHandicap(activeHandicap)
+      setPositionStart(startFen ?? null)
+      setImported(null)
+      // Face your own pieces: the board turns to the player's colour.
+      setOrientation(engine ? human : 'w')
+
+      const engineName = `Stockfish (${eloLabel(level)})`
+      game.reset({
+        fen: startFen ?? (activeHandicap === 'none' ? undefined : handicapFen(activeHandicap, opposite(human))),
+        event: engine ? 'Gambit — partie proti Stockfishi' : undefined,
+        white: engine ? (human === 'w' ? 'Hráč' : engineName) : undefined,
+        black: engine ? (human === 'b' ? 'Hráč' : engineName) : undefined,
+      })
+      enterGame(nextTimeControl)
+    },
     [
+      enterGame,
       game,
       setColorChoice,
       setEngineLevelId,
@@ -786,9 +822,48 @@ export default function App() {
       setOrientation,
       setStoredHandicap,
       setStoredTempo,
-      sound,
     ],
   )
+
+  /** Puts an imported record on the board, in review from its first position. */
+  const openRecord = useCallback(
+    (record: ImportedGame) => {
+      const untimed = getTimeControl('none')
+      setTimeControl(untimed)
+      setHumanColor('w')
+      setGameHandicap('none')
+      setPositionStart(null)
+      setImported(record)
+      setOrientation('w')
+      game.load(record)
+      enterGame(untimed)
+      setReviewPly(0)
+      showToast(
+        record.hasMoreGames ? 'Text obsahoval víc partií, načetla se první.' : 'Partie importována',
+      )
+    },
+    [enterGame, game, setOrientation, showToast],
+  )
+
+  /** Opens the dialog for a new game from `fen`; `color` is preselected there. */
+  const offerPosition = useCallback((fen: string, color: Color) => {
+    setPositionOffer({ fen, color })
+    setGameOverOpen(false)
+    setDialog('position')
+  }, [])
+
+  const handleImport = useCallback(
+    (content: ImportedContent) => {
+      if (content.kind === 'game') openRecord(content.game)
+      else offerPosition(content.fen, fenTurn(content.fen))
+    },
+    [offerPosition, openRecord],
+  )
+
+  const openImport = useCallback(() => {
+    setGameOverOpen(false)
+    setDialog('import')
+  }, [])
 
   const lastSettings = useMemo<NewGameSettings>(
     () => ({
@@ -801,16 +876,22 @@ export default function App() {
     [colorChoice, engineLevelId, gameMode, storedHandicap, storedTempo],
   )
 
+  /** A game from a position is replayed from it, with the same colour. */
+  const replaySettings = useMemo<NewGameSettings>(
+    () => (positionStart ? { ...lastSettings, startFen: positionStart, color: humanColor } : lastSettings),
+    [humanColor, lastSettings, positionStart],
+  )
+
   const handleRematch = useCallback(() => {
-    startNewGame({ ...lastSettings, timeControl })
-  }, [lastSettings, startNewGame, timeControl])
+    startNewGame({ ...replaySettings, timeControl })
+  }, [replaySettings, startNewGame, timeControl])
 
   /** Picking another level in the header starts a new game with it right away. */
   const changeLevel = useCallback(
     (levelId: string) => {
-      startNewGame({ ...lastSettings, mode: 'stockfish', levelId })
+      startNewGame({ ...replaySettings, mode: 'stockfish', levelId })
     },
-    [lastSettings, startNewGame],
+    [replaySettings, startNewGame],
   )
 
   const openNewGame = useCallback(() => {
@@ -1042,21 +1123,25 @@ export default function App() {
   const clockRunning = game.started && !game.outcome && !clockPaused
 
   const playerName = (color: Color) => {
+    if (imported) return color === 'w' ? imported.white : imported.black
     if (isEngineGame) return color === engineColor ? 'Stockfish' : 'Ty'
     return COLOR_NAMES[color]
   }
-  const shortName = (color: Color) => (isEngineGame ? playerName(color) : COLOR_LABELS[color])
+  const shortName = (color: Color) => (isEngineGame || imported ? playerName(color) : COLOR_LABELS[color])
 
   const viewTurn = viewState?.turn ?? game.turn
   const viewCheck = viewState ? viewState.isCheck : game.isCheck
 
   const renderPlayer = (color: Color) => {
     const isEngine = isEngineGame && color === engineColor
+    const importedElo = color === 'w' ? imported?.whiteElo : imported?.blackElo
     const rating = isEngine
       ? `${eloLabel(engineLevel)}${gameHandicap !== 'none' ? ` · ${HANDICAPS.find((h) => h.id === gameHandicap)?.label.toLowerCase()}` : ''}`
       : isEngineGame
         ? COLOR_LABELS[color]
-        : undefined
+        : importedElo
+          ? `Elo ${importedElo}`
+          : undefined
 
     return (
       <PlayerStrip
@@ -1083,11 +1168,9 @@ export default function App() {
 
   const lastMove = history[history.length - 1]
   const reviewedMove = reviewing && viewPly > 0 ? history[viewPly - 1] : null
-  const moveLabelOf = (move: Move, ply: number) =>
-    `${Math.ceil(ply / 2)}.${move.color === 'b' ? '..' : ''} ${move.san}`
 
   const announcement = reviewing
-    ? `Prohlížení: ${reviewedMove ? moveLabelOf(reviewedMove, viewPly) : 'výchozí pozice'}.`
+    ? `Prohlížení: ${reviewedMove ? moveLabel(reviewedMove) : 'výchozí pozice'}.`
     : game.outcome
       ? `${resultHeadline(game.outcome)}. ${REASON_LABELS[game.outcome.reason]}.`
       : lastMove
@@ -1145,13 +1228,14 @@ export default function App() {
   const analyses = analysis.analyses
   const explanation = useMemo(
     () =>
-      ratings ? explainHistoryMove(history, coachIndex, ratings, analyses, gameHandicap === 'none') : null,
-    [analyses, coachIndex, gameHandicap, history, ratings],
+      ratings ? explainHistoryMove(history, coachIndex, ratings, analyses, standardStart) : null,
+    [analyses, coachIndex, history, ratings, standardStart],
   )
 
   const coachComment: CoachComment | null =
     coachMove && coachRated && explanation
       ? {
+          moveKey: coachMove.after,
           title: `${
             !isEngineGame
               ? `Tah ${coachMove.color === 'w' ? 'bílého' : 'černého'}`
@@ -1188,6 +1272,59 @@ export default function App() {
     speak(spokenText.current)
   }, [cancelSpeech, coachVoice, speak, spokenMove, spokenText])
 
+  // Brilliant and great moves have a sound of their own, once each time the coach turns to one.
+  const specialRating =
+    screen === 'game' && (coachComment?.rating === 'brilliant' || coachComment?.rating === 'great')
+      ? coachComment.rating
+      : null
+  const coachKey = coachMove?.after ?? null
+  const celebratedRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (celebratedRef.current !== coachKey) celebratedRef.current = null
+    if (!specialRating || celebratedRef.current === coachKey) return
+    // After the click of the move itself.
+    const timer = window.setTimeout(() => {
+      celebratedRef.current = coachKey
+      playSound(specialRating)
+    }, 180)
+    return () => window.clearTimeout(timer)
+  }, [coachKey, playSound, specialRating])
+
+  // ---------------------------------------------------------------- training
+  // Every rated mistake of your own is kept, even if the game is never finished.
+  useEffect(() => {
+    if (!ratings || imported) return
+    const found = collectPuzzles(history, ratings, analyses, isEngineGame ? humanColor : null, Date.now())
+    if (found.length > 0) setPuzzles((previous) => mergePuzzles(previous, found))
+  }, [analyses, history, humanColor, imported, isEngineGame, ratings, setPuzzles])
+
+  /** The newest unsolved mistake of the game on the board. */
+  const gamePuzzle = useMemo(() => {
+    if (imported) return null
+    const positions = new Set(history.map((move) => move.before))
+    return puzzles.find((puzzle) => !puzzle.solved && positions.has(puzzle.fen)) ?? null
+  }, [history, imported, puzzles])
+
+  const openTraining = useCallback((startId: string | null) => {
+    setTrainingStart(startId)
+    setGameOverOpen(false)
+    setDialog(null)
+    setSelected(null)
+    setPremove(null)
+    setDemo(null)
+    setScreen('training')
+  }, [])
+
+  const solvePuzzle = useCallback(
+    (id: string) => {
+      setPuzzles((previous) => previous.map((puzzle) => (puzzle.id === id ? { ...puzzle, solved: true } : puzzle)))
+    },
+    [setPuzzles],
+  )
+  const restartPuzzles = useCallback(() => {
+    setPuzzles((previous) => previous.map((puzzle) => ({ ...puzzle, solved: false })))
+  }, [setPuzzles])
+
   const canRetry =
     isEngineGame &&
     !game.outcome &&
@@ -1205,23 +1342,32 @@ export default function App() {
   const moments = useMemo<KeyMoment[]>(() => {
     if (!gameOverOpen || !ratings) return []
     return keyMoments(history, ratings, isEngineGame ? humanColor : null).flatMap((index) => {
-      const explained = explainHistoryMove(history, index, ratings, analyses, gameHandicap === 'none')
+      const explained = explainHistoryMove(history, index, ratings, analyses, standardStart)
       if (!explained) return []
       const move = history[index]
       return [
         {
           index,
-          label: moveLabelOf(move, index + 1),
+          label: moveLabel(move),
           rating: ratings[move.after].rating,
           text: explanationText(explained),
         },
       ]
     })
-  }, [analyses, gameHandicap, gameOverOpen, history, humanColor, isEngineGame, ratings])
+  }, [analyses, gameOverOpen, history, humanColor, isEngineGame, ratings, standardStart])
+
+  const highlights = useMemo<HighlightMove[]>(() => {
+    if (!gameOverOpen || !ratings) return []
+    return highlightMoves(history, ratings, isEngineGame ? humanColor : null).map((index) => ({
+      index,
+      label: moveLabel(history[index]),
+      rating: ratings[history[index].after].rating,
+    }))
+  }, [gameOverOpen, history, humanColor, isEngineGame, ratings])
 
   const openMoment = (index: number) => {
     if (!ratings) return
-    const explained = explainHistoryMove(history, index, ratings, analyses, gameHandicap === 'none')
+    const explained = explainHistoryMove(history, index, ratings, analyses, standardStart)
     setGameOverOpen(false)
     openDemo(index, explained?.problemDemo ? 'problem' : 'better')
   }
@@ -1265,7 +1411,7 @@ export default function App() {
       markers.push({
         ply: index + 1,
         tone,
-        label: `${moveLabelOf(move, index + 1)} · ${MOVE_RATING_META[rated.rating].label}`,
+        label: `${moveLabel(move)} · ${MOVE_RATING_META[rated.rating].label}`,
       })
     })
     return markers
@@ -1300,13 +1446,18 @@ export default function App() {
       : `Dva hráči na jedné desce · ${getTimeControl(storedTempo).label}`
   const progressSummary = `${
     isEngineGame ? `Proti Stockfishi (${eloLabel(engineLevel)})` : 'Dva hráči lokálně'
-  } · ${Math.ceil(history.length / 2)}. tah · na tahu ${
+  } · ${fenMoveNumber(lastMove?.before ?? game.fen)}. tah · na tahu ${
     isEngineGame ? (game.turn === humanColor ? 'jsi ty' : 'Stockfish') : COLOR_LABELS[game.turn].toLowerCase()
   }`
 
   const reviewStatus = reviewing
-    ? `Prohlížíš ${reviewedMove ? moveLabelOf(reviewedMove, viewPly) : 'výchozí pozici'} · ${viewPly}/${history.length}`
+    ? `Prohlížíš ${reviewedMove ? moveLabel(reviewedMove) : 'výchozí pozici'} · ${viewPly}/${history.length}`
     : null
+
+  // "Hrát odsud": against Stockfish keep your colour, otherwise take the side to move.
+  const playFromView = isPlayablePosition(viewFen)
+    ? () => offerPosition(viewFen, isEngineGame ? humanColor : fenTurn(viewFen))
+    : undefined
 
   return (
     <div className="app">
@@ -1323,7 +1474,19 @@ export default function App() {
         onChangeLevel={changeLevel}
       />
 
-      {screen === 'home' ? (
+      {screen === 'training' ? (
+        <TrainingScreen
+          puzzles={puzzles}
+          startId={trainingStart}
+          boardTheme={boardTheme}
+          showCoordinates={showCoordinates}
+          animations={animations}
+          onSolved={solvePuzzle}
+          onRestart={restartPuzzles}
+          onSound={playSound}
+          onExit={goHome}
+        />
+      ) : screen === 'home' ? (
         <main className="app-main app-main--home">
           <StartScreen
             inProgress={game.started && !game.outcome}
@@ -1336,6 +1499,9 @@ export default function App() {
             onContinue={() => setScreen('game')}
             onCustomize={openNewGame}
             onLocal={() => startNewGame({ ...lastSettings, mode: 'human', handicap: 'none' })}
+            onImport={openImport}
+            onTrain={() => openTraining(null)}
+            openPuzzles={puzzles.filter((puzzle) => !puzzle.solved).length}
           />
         </main>
       ) : (
@@ -1399,13 +1565,14 @@ export default function App() {
                 <ReviewBar
                   ply={viewPly}
                   total={history.length}
-                  moveLabel={reviewedMove ? moveLabelOf(reviewedMove, viewPly) : null}
+                  moveLabel={reviewedMove ? moveLabel(reviewedMove) : null}
                   rating={reviewedRating?.rating ?? null}
                   bestSan={bestSan}
                   gameOver={Boolean(game.outcome)}
                   onNavigate={showPly}
                   onExit={() => showPly(history.length)}
                   onNextMistake={nextMistake !== null ? jumpToNextMistake : undefined}
+                  onPlayFrom={playFromView}
                 />
               ) : (
                 <BoardToolbar
@@ -1423,6 +1590,7 @@ export default function App() {
                   onDraw={() => setDialog('draw')}
                   onHint={handleToggleHint}
                   onShowResult={() => setGameOverOpen(true)}
+                  onPlayFrom={playFromView}
                 />
               )}
               {engineError ? (
@@ -1458,6 +1626,7 @@ export default function App() {
                 comment={coachComment}
                 ratingPending={coachPending}
                 engineThinking={engineThinking}
+                gameOver={Boolean(game.outcome)}
                 retryPrompt={retryFen === game.fen && !reviewing && !demoActive}
                 demoView={activeDemo?.view ?? null}
                 backLabel={game.outcome ? 'Zavřít ukázku' : 'Zpět do hry'}
@@ -1473,19 +1642,31 @@ export default function App() {
                 }
               />
             }
-            modeLabel={isEngineGame ? 'Proti Stockfishi' : 'Dva hráči lokálně'}
+            modeLabel={
+              imported ? 'Importovaná partie' : isEngineGame ? 'Proti Stockfishi' : 'Dva hráči lokálně'
+            }
             engineLabel={
-              isEngineGame
-                ? `${eloLabel(engineLevel)} · hraješ za ${humanColor === 'w' ? 'bílé' : 'černé'}`
-                : undefined
+              imported
+                ? `${imported.white} – ${imported.black}`
+                : isEngineGame
+                  ? `${eloLabel(engineLevel)} · hraješ za ${humanColor === 'w' ? 'bílé' : 'černé'}`
+                  : undefined
             }
             onCopyPgn={copyPgn}
             onCopyFen={copyFen}
+            onImport={openImport}
+            customStart={!standardStart}
             whiteLabel={shortName('w')}
             blackLabel={shortName('b')}
             viewPly={viewPly}
             onSelectPly={showPly}
             analysis={analysisCard}
+            opening={
+              standardStart
+                ? (openingName(history, viewPly) ??
+                  (viewPly === 0 ? 'Zahájení se ukáže po prvním tahu' : 'Zahájení bez názvu'))
+                : undefined
+            }
             reviewStatus={reviewStatus}
           />
         </main>
@@ -1504,6 +1685,28 @@ export default function App() {
           currentHandicap={storedHandicap}
           hasProgress={game.started && !game.outcome}
           onStart={startNewGame}
+          onClose={() => setDialog(null)}
+        />
+      ) : null}
+
+      {dialog === 'position' && positionOffer ? (
+        <NewGameDialog
+          currentMode={gameMode}
+          currentLevelId={engineLevelId}
+          currentTimeControlId={storedTempo}
+          currentColor={positionOffer.color}
+          currentHandicap="none"
+          startFen={positionOffer.fen}
+          hasProgress={game.started && !game.outcome}
+          onStart={startNewGame}
+          onClose={() => setDialog(null)}
+        />
+      ) : null}
+
+      {dialog === 'import' ? (
+        <ImportDialog
+          hasProgress={game.started && !game.outcome}
+          onImport={handleImport}
           onClose={() => setDialog(null)}
         />
       ) : null}
@@ -1568,7 +1771,7 @@ export default function App() {
           progress={analysis.progress}
           markers={graphMarkers}
           hasMistakes={nextMistake !== null}
-          onRematch={handleRematch}
+          onRematch={imported ? undefined : handleRematch}
           onNewGame={openNewGame}
           onReviewPly={reviewFromDialog}
           onNextMistake={jumpToNextMistake}
@@ -1576,6 +1779,9 @@ export default function App() {
           onClose={() => setGameOverOpen(false)}
           moments={moments}
           onOpenMoment={openMoment}
+          highlights={highlights}
+          opening={standardStart ? openingName(history) : null}
+          onTrain={gamePuzzle ? () => openTraining(gamePuzzle.id) : undefined}
         />
       ) : null}
 

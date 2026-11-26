@@ -8,8 +8,8 @@ import type { RatedMove } from './moveRating'
 import { premovePromotion, premoveTargets } from './premove'
 import {
   buildEvalSeries,
-  bucketOf,
   graphPoints,
+  highlightMoves,
   nextMistakePly,
   plyAtX,
   plyFens,
@@ -213,7 +213,7 @@ describe('review: eval series and summary', () => {
       [history[6].after]: rated('brilliant', 100),
     }
     const white = summarizeSide(history, ratings, 'w')
-    expect(white.counts).toEqual({ best: 2, good: 0, inaccuracy: 1, mistake: 0, blunder: 0 })
+    expect(white.counts).toMatchObject({ book: 1, inaccuracy: 1, best: 1, brilliant: 1, great: 0, blunder: 0 })
     expect(white.accuracy).toBeCloseTo(90)
     expect(white.total).toBe(4)
     const black = summarizeSide(history, ratings, 'b')
@@ -224,8 +224,8 @@ describe('review: eval series and summary', () => {
     expect(nextMistakePly(history, ratings, 'b', 6)).toBe(6) // wraps to the only one
     expect(nextMistakePly(history, ratings, 'w', 0)).toBeNull() // inaccuracy is not a mistake
     expect(nextMistakePly(history, ratings, null, 0)).toBe(6)
-    expect(bucketOf('miss')).toBe('mistake')
-    expect(bucketOf('book')).toBeNull()
+    expect(highlightMoves(history, ratings, null)).toEqual([6])
+    expect(highlightMoves(history, ratings, 'b')).toEqual([])
   })
 
   it('summary with nothing rated has null accuracy', () => {

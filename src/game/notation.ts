@@ -11,6 +11,10 @@ export type GameReason =
   | 'fifty-move-rule'
   | 'agreement'
   | 'draw'
+  /** Imported game: the result comes from its record. */
+  | 'record'
+  /** Imported game whose record has no result. */
+  | 'unfinished'
 
 export interface GameOutcome {
   winner: Color | null
@@ -33,21 +37,33 @@ export const REASON_LABELS: Record<GameReason, string> = {
   'fifty-move-rule': 'Pravidlo padesáti tahů',
   agreement: 'Dohoda hráčů',
   draw: 'Remíza',
+  record: 'Výsledek ze zápisu',
+  unfinished: 'Zápis končí bez výsledku',
 }
 
+/** Full-move number of a FEN. */
+export function fenMoveNumber(fen: string): number {
+  return Number(fen.split(' ')[5]) || 1
+}
+
+/** "12. Nf3" / "12... Nf6", numbered from the position the move was played in. */
+export function moveLabel(move: Move): string {
+  return `${fenMoveNumber(move.before)}.${move.color === 'b' ? '..' : ''} ${move.san}`
+}
+
+/** Rows of the move list. A game from a custom position may open with Black. */
 export function groupMoves(history: Move[]): MovePair[] {
   const pairs: MovePair[] = []
-  history.forEach((move, index) => {
-    const pairIndex = Math.floor(index / 2)
-    if (!pairs[pairIndex]) {
-      pairs[pairIndex] = { number: pairIndex + 1 }
+  for (const move of history) {
+    const number = fenMoveNumber(move.before)
+    let pair = pairs[pairs.length - 1]
+    if (!pair || pair.number !== number) {
+      pair = { number }
+      pairs.push(pair)
     }
-    if (move.color === 'w') {
-      pairs[pairIndex].white = move
-    } else {
-      pairs[pairIndex].black = move
-    }
-  })
+    if (move.color === 'w') pair.white = move
+    else pair.black = move
+  }
   return pairs
 }
 
@@ -87,17 +103,20 @@ export function formatDuration(seconds: number): string {
 }
 
 export function resultScore(outcome: GameOutcome): string {
+  if (outcome.reason === 'unfinished') return '*'
   if (!outcome.winner) return '½–½'
   return outcome.winner === 'w' ? '1–0' : '0–1'
 }
 
 /** ASCII result token mandated by the PGN specification. */
 export function pgnResult(outcome: GameOutcome): string {
+  if (outcome.reason === 'unfinished') return '*'
   if (!outcome.winner) return '1/2-1/2'
   return outcome.winner === 'w' ? '1-0' : '0-1'
 }
 
 export function resultHeadline(outcome: GameOutcome): string {
+  if (outcome.reason === 'unfinished') return 'Nedohraná partie'
   if (!outcome.winner) return 'Remíza'
   return outcome.winner === 'w' ? 'Bílý vyhrává' : 'Černý vyhrává'
 }

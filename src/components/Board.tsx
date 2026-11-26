@@ -4,6 +4,7 @@ import type { Color, Move, PieceSymbol, Square } from 'chess.js'
 import { COLOR_LABELS, PIECE_LABELS } from '../game/constants'
 import type { BoardThemeId } from '../game/constants'
 import type { GameOutcome } from '../game/notation'
+import { MOVE_RATING_META } from '../game/moveRating'
 import type { MoveRating } from '../game/moveRating'
 import { arrowGeometry, toggleArrow, toggleMark, toneForModifiers } from '../game/arrows'
 import type { ArrowTone, BoardArrow, BoardMark } from '../game/arrows'
@@ -104,6 +105,9 @@ interface PointerDownState {
 }
 
 const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'] as const
+
+/** Directions of the sparks around a brilliant move. */
+const SPARK_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315]
 
 /** How long a piece counts as moving: just over the longest glide (see `glideMs`). */
 const MOVE_MS = 420
@@ -778,8 +782,39 @@ export function Board({
           </div>
         ) : null}
 
+        {ratedBadge && (ratedBadge.rating === 'brilliant' || ratedBadge.rating === 'great') ? (
+          <div
+            key={`fx-${ratedBadge.square}-${ratedBadge.rating}`}
+            className={`board-fx board-fx--${ratedBadge.rating}`}
+            style={{
+              '--x': getDisplayPosition(ratedBadge.square, viewOrientation).col,
+              '--y': getDisplayPosition(ratedBadge.square, viewOrientation).row,
+              '--fx-tone': MOVE_RATING_META[ratedBadge.rating].tone,
+            } as CSSProperties}
+            aria-hidden="true"
+          >
+            {ratedBadge.rating === 'brilliant' ? (
+              <>
+                <span className="board-fx-ring" />
+                <span className="board-fx-ring" />
+                {SPARK_ANGLES.map((angle) => (
+                  <span
+                    key={angle}
+                    className="board-fx-spark"
+                    style={{ '--angle': `${angle}deg` } as CSSProperties}
+                  />
+                ))}
+              </>
+            ) : (
+              <span />
+            )}
+          </div>
+        ) : null}
+
         {ratedBadge ? (
           <div
+            // A new verdict is a new element, so its entrance plays again.
+            key={`${ratedBadge.square}-${ratedBadge.rating}`}
             className="board-rating-badge-layer"
             style={{
               '--x': getDisplayPosition(ratedBadge.square, viewOrientation).col,

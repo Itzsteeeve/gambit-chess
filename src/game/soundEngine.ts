@@ -9,6 +9,8 @@ export type SoundName =
   | 'end-draw'
   | 'illegal'
   | 'ui'
+  | 'brilliant'
+  | 'great'
 
 class SoundEngine {
   private context: AudioContext | null = null
@@ -102,6 +104,25 @@ class SoundEngine {
             attack: 0.05,
           })
         })
+        break
+      case 'brilliant':
+        // A quick rising sparkle that opens into a high shimmer.
+        ;[659.25, 830.61, 987.77, 1318.51, 1661.22].forEach((frequency, index) => {
+          this.tone(frequency, 0.34, {
+            gain: 0.03,
+            type: 'triangle',
+            delay: index * 0.055,
+            attack: 0.006,
+          })
+        })
+        this.tone(2637, 0.7, { gain: 0.012, type: 'sine', delay: 0.3, attack: 0.05, endFreq: 3136 })
+        this.noiseBurst(0.35, 0.018, 7600, 2.5, 0.26)
+        break
+      case 'great':
+        // A soft knock and two bright notes, a fifth apart.
+        this.tone(196, 0.14, { gain: 0.05, type: 'sine', endFreq: 147, attack: 0.003 })
+        this.tone(587.33, 0.3, { gain: 0.035, type: 'sine', delay: 0.04, attack: 0.008 })
+        this.tone(880, 0.5, { gain: 0.032, type: 'sine', delay: 0.17, attack: 0.008 })
         break
     }
   }

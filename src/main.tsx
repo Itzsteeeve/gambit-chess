@@ -9,6 +9,7 @@ import './styles/board.css'
 import './styles/pieces.css'
 import './styles/panels.css'
 import './styles/dialogs.css'
+import './styles/ratings.css'
 import './styles/responsive.css'
 import App from './App'
 

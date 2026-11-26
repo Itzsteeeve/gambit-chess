@@ -1,7 +1,7 @@
 ﻿import { useCallback, useRef, useState } from 'react'
 import type { Color, Move, PieceSymbol, Square } from 'chess.js'
 import { GameModel } from './gameModel'
-import type { GameSetup, GameState, MoveResult } from './gameModel'
+import type { GameRecord, GameSetup, GameState, MoveResult } from './gameModel'
 import type { GameOutcome } from './notation'
 
 export type { GameSetup, GameState, MoveResult } from './gameModel'
@@ -56,6 +56,12 @@ export function useChessGame() {
     setGameNumber((value) => value + 1)
   }, [model, sync])
 
+  const load = useCallback((record: GameRecord) => {
+    model.load(record)
+    sync()
+    setGameNumber((value) => value + 1)
+  }, [model, sync])
+
   const finish = useCallback(
     (outcome: GameOutcome) => {
       if (model.finish(outcome)) sync()
@@ -100,6 +106,7 @@ export function useChessGame() {
     undo,
     redo,
     reset,
+    load,
     resign,
     agreeDraw,
     timeout,

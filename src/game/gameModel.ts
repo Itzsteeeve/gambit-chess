@@ -84,8 +84,7 @@ export function timeoutOutcome(fen: string, loser: Color): GameOutcome {
   return { winner, reason: 'timeout' }
 }
 
-function buildState(game: Chess, pieces: GamePiece[]): GameState {
-  const history = game.history({ verbose: true })
+function buildState(game: Chess, pieces: GamePiece[], history = game.history({ verbose: true })): GameState {
   const turn = game.turn()
   const isCheck = game.isCheck()
   const checkSquare = isCheck ? (findKing(pieces, turn)?.square ?? null) : null
@@ -102,8 +101,15 @@ function buildState(game: Chess, pieces: GamePiece[]): GameState {
   }
 }
 
+export interface GameRecord {
+  startFen?: string
+  moves: Array<{ from: Square; to: Square; promotion?: PieceSymbol }>
+  headers: Record<string, string>
+  outcome: GameOutcome
+}
+
 export interface GameSetup {
-  /** Custom start position (handicap). Adds [SetUp "1"] and [FEN] PGN headers. */
+  /** Custom start position (handicap, imported). Adds [SetUp "1"] and [FEN] PGN headers. */
   fen?: string
   white?: string
   black?: string
@@ -217,6 +223,28 @@ export class GameModel {
     this.future = []
     this.startFen = this.game.fen()
     this.state = buildState(this.game, setup.fen ? piecesFromBoard(this.game) : createInitialPieces())
+  }
+
+  /**
+   * Replaces the game with a finished record (see `importGame.ts`, which has
+   * already checked the moves). Draws the players did not claim on the way, such
+   * as a repetition, do not stop the replay.
+   */
+  load({ startFen, moves, headers, outcome }: GameRecord) {
+    this.reset({ fen: startFen })
+    for (const [key, value] of Object.entries(headers)) this.game.setHeader(key, value)
+
+    for (const next of moves) {
+      const before = this.state
+      const move = this.game.move(next)
+      const { pieces } = applyMoveToPieces(before.pieces, move)
+      // The history is appended here: asking chess.js for it each ply is quadratic.
+      this.state = buildState(this.game, pieces, [...before.history, move])
+      this.past.push({ before: { ...before, outcome: null }, move })
+    }
+
+    this.game.setHeader('Result', pgnResult(outcome))
+    this.state = { ...this.state, outcome }
   }
 
   /** FEN the current game started from. */

@@ -1,11 +1,12 @@
 import type { CSSProperties } from 'react'
-import { CircleAlert, Flag, Handshake, Info, Plus, RotateCcw, Trophy } from 'lucide-react'
+import { CircleAlert, Dumbbell, Flag, Handshake, Info, Plus, RotateCcw, Trophy } from 'lucide-react'
 import type { Color, Move } from 'chess.js'
 import type { GameOutcome } from '../game/notation'
 import { formatDuration, resultHeadline, resultScore, resultSubline } from '../game/notation'
 import type { MoveRating, RatedMove } from '../game/moveRating'
+import { MOVE_RATING_META } from '../game/moveRating'
 import { MoveRatingBadge } from './MoveRatingBadge'
-import { REVIEW_BUCKETS, REVIEW_BUCKET_LABELS, summarizeSide } from '../game/review'
+import { RATING_ORDER, RATING_SUMMARY_LABELS, summarizeSide } from '../game/review'
 import { cx } from '../lib/cx'
 import { Modal } from './Modal'
 import { Confetti } from './Confetti'
@@ -27,7 +28,8 @@ interface GameOverDialogProps {
   markers: GraphMarker[]
   /** True when at least one mistake exists for "Další chyba". */
   hasMistakes: boolean
-  onRematch: () => void
+  /** Absent for an imported game, which nobody here played. */
+  onRematch?: () => void
   onNewGame: () => void
   onClose: () => void
   onReviewPly: (ply: number) => void
@@ -36,6 +38,19 @@ interface GameOverDialogProps {
   /** The costliest mistakes with the coach's comment. */
   moments?: KeyMoment[]
   onOpenMoment: (index: number) => void
+  /** The brilliant and great moves worth showing off. */
+  highlights?: HighlightMove[]
+  /** Name of the opening the game went through. */
+  opening?: string | null
+  /** Opens the training with the mistakes of this game; absent when there are none. */
+  onTrain?: () => void
+}
+
+export interface HighlightMove {
+  /** Index of the move in the history. */
+  index: number
+  label: string
+  rating: MoveRating
 }
 
 export interface KeyMoment {
@@ -47,8 +62,7 @@ export interface KeyMoment {
 }
 
 function headlineFor(outcome: GameOutcome, humanColor: Color | null) {
-  if (!outcome.winner) return 'Remíza'
-  if (humanColor) return outcome.winner === humanColor ? 'Vyhrál jsi' : 'Prohrál jsi'
+  if (outcome.winner && humanColor) return outcome.winner === humanColor ? 'Vyhrál jsi' : 'Prohrál jsi'
   return resultHeadline(outcome)
 }
 
@@ -76,8 +90,12 @@ export function GameOverDialog({
   onOpenRatings,
   moments = [],
   onOpenMoment,
+  highlights = [],
+  opening,
+  onTrain,
 }: GameOverDialogProps) {
   const winner = outcome.winner
+  const imported = !onRematch
   const humanWon = Boolean(winner && (humanColor === null || winner === humanColor))
   const captures = history.filter((move) => move.captured).length
   const checks = history.filter((move) => move.san.includes('+') || move.san.includes('#')).length
@@ -98,7 +116,17 @@ export function GameOverDialog({
     <Modal
       title={headlineFor(outcome, humanColor)}
       description={resultSubline(outcome)}
-      icon={!winner ? <Handshake size={20} /> : humanWon ? <Trophy size={20} /> : <Flag size={20} />}
+      icon={
+        outcome.reason === 'unfinished' ? (
+          <Info size={20} />
+        ) : !winner ? (
+          <Handshake size={20} />
+        ) : humanWon ? (
+          <Trophy size={20} />
+        ) : (
+          <Flag size={20} />
+        )
+      }
       onClose={onClose}
       size="md"
       className={cx('result-modal', !winner && 'is-draw', humanColor && winner && !humanWon && 'is-loss')}
@@ -109,23 +137,31 @@ export function GameOverDialog({
             Nová partie
           </button>
           <div className="footer-spacer" />
-          <button type="button" className="button button--ghost" onClick={() => close()}>
+          <button
+            type="button"
+            className={cx('button', onRematch ? 'button--ghost' : 'button--primary')}
+            onClick={() => close()}
+            data-autofocus={onRematch ? undefined : true}
+          >
             Prohlédnout desku
           </button>
-          <button type="button" className="button button--primary" onClick={() => close(onRematch)} data-autofocus>
-            <RotateCcw size={16} />
-            Odveta
-          </button>
+          {onRematch ? (
+            <button type="button" className="button button--primary" onClick={() => close(onRematch)} data-autofocus>
+              <RotateCcw size={16} />
+              Odveta
+            </button>
+          ) : null}
         </>
       )}
     >
-      {humanWon && winner ? <Confetti /> : null}
+      {humanWon && winner && !imported ? <Confetti /> : null}
       <div className="result-body">
         <div className="result-score" aria-label={`Skóre ${resultScore(outcome)}`}>
           <span className="result-score-side">{whiteName}</span>
           <strong>{resultScore(outcome)}</strong>
           <span className="result-score-side">{blackName}</span>
         </div>
+        {opening ? <p className="result-opening">{opening}</p> : null}
 
         <div className="result-stage" aria-hidden="true">
           {winner ? (
@@ -140,7 +176,7 @@ export function GameOverDialog({
           )}
         </div>
 
-        <div className="result-stats">
+        <div className={cx('result-stats', imported && 'result-stats--three')}>
           <div>
             <span>Tahy</span>
             <strong>{history.length}</strong>
@@ -153,10 +189,12 @@ export function GameOverDialog({
             <span>Šachy</span>
             <strong>{checks}</strong>
           </div>
-          <div>
-            <span>Trvání</span>
-            <strong>{formatDuration(durationSeconds)}</strong>
-          </div>
+          {imported ? null : (
+            <div>
+              <span>Trvání</span>
+              <strong>{formatDuration(durationSeconds)}</strong>
+            </div>
+          )}
         </div>
 
         {history.length > 0 ? (
@@ -201,16 +239,26 @@ export function GameOverDialog({
                     <td>{formatAccuracy(white.accuracy)}</td>
                     <td>{formatAccuracy(black.accuracy)}</td>
                   </tr>
-                  {REVIEW_BUCKETS.map((bucket) => (
-                    <tr key={bucket} className={`review-table-row review-table-row--${bucket}`}>
-                      <th scope="row">
-                        <span className="review-dot" aria-hidden="true" />
-                        {REVIEW_BUCKET_LABELS[bucket]}
-                      </th>
-                      <td className={cx(white.counts[bucket] === 0 && 'is-zero')}>{white.counts[bucket]}</td>
-                      <td className={cx(black.counts[bucket] === 0 && 'is-zero')}>{black.counts[bucket]}</td>
-                    </tr>
-                  ))}
+                  {RATING_ORDER.map((rating, row) => {
+                    const found = white.counts[rating] + black.counts[rating] > 0
+                    return (
+                      <tr
+                        key={rating}
+                        className={cx('review-table-row', `review-table-row--${rating}`, found && 'is-found')}
+                        style={{ '--row': row, '--row-tone': MOVE_RATING_META[rating].tone } as CSSProperties}
+                      >
+                        <th scope="row">
+                          {/* Keyed so the badge lands again when its first move is found. */}
+                          <span key={String(found)} className={cx('review-table-badge', found && 'rating-fx')} aria-hidden="true">
+                            <MoveRatingBadge rating={rating} size="xs" />
+                          </span>
+                          {RATING_SUMMARY_LABELS[rating]}
+                        </th>
+                        <td className={cx(white.counts[rating] === 0 && 'is-zero')}>{white.counts[rating]}</td>
+                        <td className={cx(black.counts[rating] === 0 && 'is-zero')}>{black.counts[rating]}</td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             ) : (
@@ -218,6 +266,29 @@ export function GameOverDialog({
                 {analysing ? 'Stockfish právě prochází partii…' : 'Rozbor není k dispozici.'}
               </p>
             )}
+
+            {highlights.length > 0 ? (
+              <div className="key-moments">
+                <h5>Brilantní a skvělé tahy</h5>
+                <ul className="highlight-moves">
+                  {highlights.map((move) => (
+                    <li key={move.index}>
+                      <button
+                        type="button"
+                        className={cx('highlight-move', `highlight-move--${move.rating}`)}
+                        onClick={() => onReviewPly(move.index + 1)}
+                      >
+                        <span className="rating-fx">
+                          <MoveRatingBadge rating={move.rating} size="sm" />
+                        </span>
+                        <strong>{move.label}</strong>
+                        <span>{MOVE_RATING_META[move.rating].label}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
 
             {moments.length > 0 ? (
               <div className="key-moments">
@@ -239,6 +310,12 @@ export function GameOverDialog({
             ) : null}
 
             <div className="result-review-actions">
+              {onTrain ? (
+                <button type="button" className="result-review-guide-btn" onClick={onTrain}>
+                  <Dumbbell size={14} />
+                  <span>Procvičit chyby</span>
+                </button>
+              ) : null}
               <button
                 type="button"
                 className="result-review-guide-btn"

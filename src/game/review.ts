@@ -3,42 +3,36 @@ import type { MoveRating, RatedMove } from './moveRating'
 import { winProbability, scoreToCp } from './moveRating'
 import type { EngineAnalysis, EngineScore } from './uciEngine'
 
-/** Coarse buckets shown in the post-game summary. */
-export type ReviewBucket = 'best' | 'good' | 'inaccuracy' | 'mistake' | 'blunder'
+/** Every rating, in the order the post-game summary lists them. */
+export const RATING_ORDER: readonly MoveRating[] = [
+  'brilliant',
+  'great',
+  'best',
+  'excellent',
+  'good',
+  'book',
+  'inaccuracy',
+  'miss',
+  'mistake',
+  'blunder',
+]
 
-export const REVIEW_BUCKETS: readonly ReviewBucket[] = ['best', 'good', 'inaccuracy', 'mistake', 'blunder']
-
-export const REVIEW_BUCKET_LABELS: Record<ReviewBucket, string> = {
+/** Row labels of the summary (plural). */
+export const RATING_SUMMARY_LABELS: Record<MoveRating, string> = {
+  brilliant: 'Brilantní',
+  great: 'Skvělé',
   best: 'Nejlepší',
+  excellent: 'Výborné',
   good: 'Dobré',
+  book: 'Z knihy',
   inaccuracy: 'Nepřesnosti',
+  miss: 'Promeškané výhry',
   mistake: 'Chyby',
   blunder: 'Hrubky',
 }
 
-export function bucketOf(rating: MoveRating): ReviewBucket | null {
-  switch (rating) {
-    case 'brilliant':
-    case 'great':
-    case 'best':
-      return 'best'
-    case 'excellent':
-    case 'good':
-      return 'good'
-    case 'inaccuracy':
-      return 'inaccuracy'
-    case 'mistake':
-    case 'miss':
-      return 'mistake'
-    case 'blunder':
-      return 'blunder'
-    default:
-      return null // book moves are not counted
-  }
-}
-
 export interface SideSummary {
-  counts: Record<ReviewBucket, number>
+  counts: Record<MoveRating, number>
   /** Mean move accuracy (book moves excluded); null when nothing is rated yet. */
   accuracy: number | null
   rated: number
@@ -46,7 +40,7 @@ export interface SideSummary {
 }
 
 export function summarizeSide(history: Move[], ratings: Record<string, RatedMove>, color: Color): SideSummary {
-  const counts: Record<ReviewBucket, number> = { best: 0, good: 0, inaccuracy: 0, mistake: 0, blunder: 0 }
+  const counts = Object.fromEntries(RATING_ORDER.map((rating) => [rating, 0])) as Record<MoveRating, number>
   let accuracySum = 0
   let scored = 0
   let rated = 0
@@ -57,14 +51,22 @@ export function summarizeSide(history: Move[], ratings: Record<string, RatedMove
     const rating = ratings[move.after]
     if (!rating) continue
     rated += 1
-    const bucket = bucketOf(rating.rating)
-    if (!bucket) continue
-    counts[bucket] += 1
+    counts[rating.rating] += 1
+    if (rating.rating === 'book') continue
     accuracySum += rating.accuracy
     scored += 1
   }
   const accuracy = rated === 0 ? null : scored === 0 ? 100 : accuracySum / scored
   return { counts, accuracy, rated, total }
+}
+
+/** History indices of the brilliant and great moves by `color` (`null` = either side), in game order. */
+export function highlightMoves(history: Move[], ratings: Record<string, RatedMove>, color: Color | null): number[] {
+  return history.flatMap((move, index) => {
+    if (color && move.color !== color) return []
+    const rating = ratings[move.after]?.rating
+    return rating === 'brilliant' || rating === 'great' ? [index] : []
+  })
 }
 
 export function isMistake(rating: MoveRating): boolean {

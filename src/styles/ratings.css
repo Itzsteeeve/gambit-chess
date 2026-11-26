@@ -1,0 +1,442 @@
+/* ==================================================================
+   Rating animations: how a move's verdict "lands". One short run per
+   badge, a different gesture for every rating; brilliant and great add a
+   ring, a wash over the coach and an effect on the board.
+   ================================================================== */
+
+.rating-fx {
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+.rating-fx .rating-badge {
+  position: relative;
+}
+
+.rating-fx .rating-badge--brilliant {
+  animation: fx-brilliant 720ms var(--ease-out) both;
+}
+
+.rating-fx .rating-badge--great {
+  animation: fx-great 560ms var(--ease-out) both;
+}
+
+.rating-fx .rating-badge--best {
+  animation: fx-best 460ms var(--ease-out) both;
+}
+
+.rating-fx .rating-badge--excellent {
+  animation: fx-excellent 400ms var(--ease-out) both;
+}
+
+.rating-fx .rating-badge--good {
+  animation: fx-good 320ms var(--ease-out) both;
+}
+
+.rating-fx .rating-badge--book {
+  animation: fx-book 440ms var(--ease-out) both;
+}
+
+.rating-fx .rating-badge--inaccuracy {
+  animation: fx-inaccuracy 460ms var(--ease-in-out) both;
+}
+
+.rating-fx .rating-badge--miss {
+  animation: fx-miss 480ms var(--ease-out) both;
+}
+
+.rating-fx .rating-badge--mistake {
+  animation: fx-mistake 420ms var(--ease-in-out) both;
+}
+
+.rating-fx .rating-badge--blunder {
+  animation: fx-blunder 560ms var(--ease-in-out) both;
+}
+
+/* Rings: brilliant sends out two, great and blunder one. */
+.rating-fx .rating-badge--brilliant::before,
+.rating-fx .rating-badge--brilliant::after,
+.rating-fx .rating-badge--great::after,
+.rating-fx .rating-badge--blunder::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--rating-tone);
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  animation: fx-ring 600ms var(--ease-out) 180ms both;
+}
+
+.rating-fx .rating-badge--brilliant::before {
+  animation-delay: 340ms;
+}
+
+.rating-fx .rating-badge--blunder::after {
+  animation-delay: 260ms;
+}
+
+@keyframes fx-brilliant {
+  0% {
+    opacity: 0;
+    transform: scale(0.2) rotate(-220deg);
+  }
+  55% {
+    opacity: 1;
+    transform: scale(1.45) rotate(12deg);
+  }
+  75% {
+    transform: scale(0.92) rotate(-5deg);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+/* A stamp: comes down large and settles. */
+@keyframes fx-great {
+  0% {
+    opacity: 0;
+    transform: scale(2.2);
+  }
+  55% {
+    opacity: 1;
+    transform: scale(0.82);
+  }
+  78% {
+    transform: scale(1.12);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+@keyframes fx-best {
+  0% {
+    opacity: 0;
+    transform: scale(0.4) rotate(-72deg);
+  }
+  65% {
+    opacity: 1;
+    transform: scale(1.2) rotate(8deg);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+@keyframes fx-excellent {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.7);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(-3px) scale(1.08);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+@keyframes fx-good {
+  from {
+    opacity: 0;
+    transform: scale(0.75);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Turns open like a page. */
+@keyframes fx-book {
+  0% {
+    opacity: 0;
+    transform: perspective(120px) rotateY(-90deg);
+  }
+  70% {
+    opacity: 1;
+    transform: perspective(120px) rotateY(16deg);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+@keyframes fx-inaccuracy {
+  0% {
+    opacity: 0;
+    transform: rotate(0);
+  }
+  20% {
+    opacity: 1;
+    transform: rotate(-18deg);
+  }
+  45% {
+    transform: rotate(13deg);
+  }
+  70% {
+    transform: rotate(-7deg);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+/* Flies in and slides past before coming back: the chance that went by. */
+@keyframes fx-miss {
+  0% {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(6px) rotate(20deg);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+@keyframes fx-mistake {
+  0% {
+    opacity: 0;
+    transform: translateX(0);
+  }
+  18% {
+    opacity: 1;
+    transform: translateX(-5px);
+  }
+  38% {
+    transform: translateX(4px);
+  }
+  58% {
+    transform: translateX(-3px);
+  }
+  78% {
+    transform: translateX(2px);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+/* Drops, squashes on impact and shudders. */
+@keyframes fx-blunder {
+  0% {
+    opacity: 0;
+    transform: translateY(-14px) scale(1.2);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(1px) scale(1.25, 0.75);
+  }
+  55% {
+    transform: translateX(-4px) scale(0.95, 1.08);
+  }
+  70% {
+    transform: translateX(3px);
+  }
+  85% {
+    transform: translateX(-2px);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+@keyframes fx-ring {
+  0% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.4);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Coach: a flat wash of the rating's colour for the two special moves */
+/* ------------------------------------------------------------------ */
+
+.coach-card {
+  position: relative;
+}
+
+.coach-wash {
+  position: absolute;
+  inset: 0;
+  background: var(--coach-tone);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.coach-wash--brilliant {
+  animation: fx-wash-brilliant 1100ms var(--ease-out) both;
+}
+
+.coach-wash--great {
+  animation: fx-wash-great 700ms var(--ease-out) both;
+}
+
+/* Sweeps across, then breathes once. */
+@keyframes fx-wash-brilliant {
+  0% {
+    opacity: 0.32;
+    clip-path: inset(0 100% 0 0);
+  }
+  35% {
+    opacity: 0.32;
+    clip-path: inset(0);
+  }
+  60% {
+    opacity: 0.08;
+  }
+  75% {
+    opacity: 0.18;
+  }
+  100% {
+    opacity: 0;
+    clip-path: inset(0);
+  }
+}
+
+@keyframes fx-wash-great {
+  from {
+    opacity: 0.26;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Board: brilliant and great, around the destination square          */
+/* ------------------------------------------------------------------ */
+
+.board-rating-badge .rating-badge--brilliant {
+  animation: fx-brilliant 720ms var(--ease-out) 80ms both;
+}
+
+.board-rating-badge .rating-badge--great {
+  animation: fx-great 560ms var(--ease-out) 80ms both;
+}
+
+.board-fx {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 24;
+  width: 12.5%;
+  height: 12.5%;
+  transform: translate3d(calc(var(--x) * 100%), calc(var(--y) * 100%), 0);
+  pointer-events: none;
+}
+
+.board-fx > span {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+
+.board-fx--great > span {
+  border: 3px solid var(--fx-tone);
+  animation: fx-board-square 700ms var(--ease-out) 120ms both;
+}
+
+.board-fx--brilliant > .board-fx-ring {
+  border: 3px solid var(--fx-tone);
+  border-radius: 50%;
+  animation: fx-board-ring 800ms var(--ease-out) 120ms both;
+}
+
+.board-fx--brilliant > .board-fx-ring + .board-fx-ring {
+  animation-delay: 320ms;
+}
+
+/* Each spark flies out along its own direction (--angle). */
+.board-fx--brilliant > .board-fx-spark {
+  inset: 44%;
+  border-radius: 50%;
+  background: var(--fx-tone);
+  box-shadow: 0 0 0 1px var(--text-bright);
+  animation: fx-board-spark 760ms var(--ease-out) 160ms both;
+}
+
+@keyframes fx-board-square {
+  0% {
+    opacity: 1;
+    transform: scale(1.5);
+  }
+  45% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+@keyframes fx-board-ring {
+  0% {
+    opacity: 1;
+    transform: scale(0.6);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.6);
+  }
+}
+
+/* The spark is 12% of a square, so these distances are about one square. */
+@keyframes fx-board-spark {
+  0% {
+    opacity: 1;
+    transform: rotate(var(--angle)) translateY(-150%) scale(1.3);
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(var(--angle)) translateY(-900%) scale(0.5);
+  }
+}
+
+.board-surface.is-flipping .board-fx {
+  display: none;
+}
+
+/* ------------------------------------------------------------------ */
+/* Result dialog: rows arrive one after another                       */
+/* ------------------------------------------------------------------ */
+
+.review-table-row.is-found .rating-fx .rating-badge,
+.review-table-row.is-found .rating-fx .rating-badge::before,
+.review-table-row.is-found .rating-fx .rating-badge::after {
+  animation-delay: calc(260ms + var(--row) * 70ms);
+}
+
+.highlight-move .rating-fx .rating-badge {
+  animation-delay: 300ms;
+}
+
+/* Motion off: the global rules shorten durations; delays have to go too. */
+html[data-motion='off'] .rating-fx .rating-badge,
+html[data-motion='off'] .rating-fx .rating-badge::before,
+html[data-motion='off'] .rating-fx .rating-badge::after,
+html[data-motion='off'] .board-rating-badge .rating-badge,
+html[data-motion='off'] .board-fx > span {
+  animation-delay: 0ms !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rating-fx .rating-badge,
+  .rating-fx .rating-badge::before,
+  .rating-fx .rating-badge::after,
+  .board-rating-badge .rating-badge,
+  .board-fx > span {
+    animation-delay: 0ms !important;
+  }
+}

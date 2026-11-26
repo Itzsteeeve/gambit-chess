@@ -6,6 +6,7 @@ import type { ColorChoice, TimeControl } from '../game/constants'
 import type { GameMode } from '../game/engineLevels'
 import { HANDICAPS } from '../game/handicap'
 import type { HandicapId } from '../game/handicap'
+import { fenTurn } from '../game/review'
 import { cx } from '../lib/cx'
 import { EloSlider } from './EloSlider'
 import { Modal } from './Modal'
@@ -16,6 +17,8 @@ export interface NewGameSettings {
   timeControl: TimeControl
   color: ColorChoice
   handicap: HandicapId
+  /** Custom start position ("Hrát odsud", imported FEN); replaces the handicap. */
+  startFen?: string
 }
 
 interface NewGameDialogProps {
@@ -24,6 +27,8 @@ interface NewGameDialogProps {
   currentTimeControlId: string
   currentColor: ColorChoice
   currentHandicap: HandicapId
+  /** Set when the game starts from this position instead of the standard one. */
+  startFen?: string
   hasProgress: boolean
   onStart: (settings: NewGameSettings) => void
   onClose: () => void
@@ -35,6 +40,7 @@ export function NewGameDialog({
   currentTimeControlId,
   currentColor,
   currentHandicap,
+  startFen,
   hasProgress,
   onStart,
   onClose,
@@ -48,7 +54,15 @@ export function NewGameDialog({
   const selectedControl =
     TIME_CONTROLS.find((control) => control.id === tempoId) ?? TIME_CONTROLS[0]
 
-  const settings = (): NewGameSettings => ({ mode, levelId, timeControl: selectedControl, color, handicap })
+  const settings = (): NewGameSettings => ({
+    mode,
+    levelId,
+    timeControl: selectedControl,
+    color,
+    handicap,
+    startFen,
+  })
+  const toMove = startFen && fenTurn(startFen) === 'b' ? 'černý' : 'bílý'
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
@@ -59,11 +73,13 @@ export function NewGameDialog({
 
   return (
     <Modal
-      title="Nová partie"
+      title={startFen ? 'Hrát z pozice' : 'Nová partie'}
       description={
-        mode === 'stockfish'
-          ? `Hraj ${colorWord} proti Stockfishi s hodnocením tahů v reálném čase.`
-          : 'Dva hráči usednou k jedné desce. Lokální souboj.'
+        startFen
+          ? `Nová partie začne ze zvolené pozice. Na tahu je ${toMove}.`
+          : mode === 'stockfish'
+            ? `Hraj ${colorWord} proti Stockfishi s hodnocením tahů v reálném čase.`
+            : 'Dva hráči usednou k jedné desce. Lokální souboj.'
       }
       icon={mode === 'stockfish' ? <Bot size={20} /> : <Swords size={20} />}
       onClose={onClose}
@@ -125,7 +141,7 @@ export function NewGameDialog({
               <EloSlider value={levelId} onChange={setLevelId} />
             </fieldset>
 
-            <div className="new-game-row">
+            <div className={cx('new-game-row', startFen && 'new-game-row--single')}>
               <fieldset className="tempo-fieldset">
                 <legend>Hraješ za</legend>
                 <div
@@ -152,23 +168,25 @@ export function NewGameDialog({
                 </div>
               </fieldset>
 
-              <fieldset className="tempo-fieldset">
-                <legend>
-                  <label htmlFor="handicap-select">Náskok</label>
-                </legend>
-                <select
-                  id="handicap-select"
-                  className="select"
-                  value={handicap}
-                  onChange={(event) => setHandicap(event.target.value as HandicapId)}
-                >
-                  {HANDICAPS.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.id === 'none' ? item.label : `Stockfish ${item.label.toLowerCase()}`}
-                    </option>
-                  ))}
-                </select>
-              </fieldset>
+              {startFen ? null : (
+                <fieldset className="tempo-fieldset">
+                  <legend>
+                    <label htmlFor="handicap-select">Náskok</label>
+                  </legend>
+                  <select
+                    id="handicap-select"
+                    className="select"
+                    value={handicap}
+                    onChange={(event) => setHandicap(event.target.value as HandicapId)}
+                  >
+                    {HANDICAPS.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.id === 'none' ? item.label : `Stockfish ${item.label.toLowerCase()}`}
+                      </option>
+                    ))}
+                  </select>
+                </fieldset>
+              )}
             </div>
           </>
         ) : null}

@@ -10,6 +10,8 @@ import { cx } from '../lib/cx'
 import { MoveRatingBadge } from './MoveRatingBadge'
 
 export interface CoachComment {
+  /** Identifies the discussed move, so its rating animates once. */
+  moveKey: string
   /** "Tvůj tah Nf3" */
   title: string
   rating: MoveRating
@@ -25,6 +27,8 @@ interface CoachCardProps {
   comment: CoachComment | null
   ratingPending: boolean
   engineThinking: boolean
+  /** The game has ended (or was imported): there is no next move to ask for. */
+  gameOver?: boolean
   /** The player just took a move back to try again. */
   retryPrompt?: boolean
   /** Which demonstration the board is showing. */
@@ -51,6 +55,7 @@ export function CoachCard({
   comment,
   ratingPending,
   engineThinking,
+  gameOver = false,
   retryPrompt = false,
   demoView = null,
   backLabel = 'Zpět do hry',
@@ -82,7 +87,13 @@ export function CoachCard({
   else if (status === 'loading') {
     message = `Načítám Stockfish ${level.elo === null ? 'v plné síle' : `Elo ${level.elo}`}…`
   } else if (retryPrompt) message = 'Zkus najít lepší tah. Pomůže ti tlačítko Rada.'
-  else if (!shown) message = loading ? 'Hodnotím tah…' : 'Zahraj tah a trenér ti k němu hned něco řekne.'
+  else if (!shown) {
+    message = loading
+      ? 'Hodnotím tah…'
+      : gameOver
+        ? 'Projdi si tahy šipkami nebo v seznamu a trenér je okomentuje.'
+        : 'Zahraj tah a trenér ti k němu hned něco řekne.'
+  }
 
   const actions: Array<{ id: string; label: string; onClick: () => void; pressed?: boolean }> = []
   if (shown && !loading) {
@@ -94,6 +105,10 @@ export function CoachCard({
     }
     if (onRetry) actions.push({ id: 'retry', label: 'Zkusit znovu', onClick: onRetry })
   }
+
+  /** Changes when another verdict lands; the badge is then remounted and animates. */
+  const landing = shown ? `${shown.moveKey}|${shown.rating}` : null
+  const special = shown && (shown.rating === 'brilliant' || shown.rating === 'great') ? shown.rating : null
 
   return (
     <section
@@ -108,9 +123,14 @@ export function CoachCard({
       aria-label="Hodnocení tahů"
       aria-busy={loading}
     >
+      {special ? (
+        <span key={landing} className={`coach-wash coach-wash--${special}`} aria-hidden="true" />
+      ) : null}
       <div className="coach-head">
         {shown ? (
-          <MoveRatingBadge rating={shown.rating} size="sm" />
+          <span key={landing} className="rating-fx">
+            <MoveRatingBadge rating={shown.rating} size="sm" />
+          </span>
         ) : (
           <GraduationCap className="coach-icon" size={18} aria-hidden="true" />
         )}
