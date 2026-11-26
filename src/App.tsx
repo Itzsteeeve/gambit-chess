@@ -66,6 +66,7 @@ import { useChessGame } from './game/useChessGame'
 import { useEngineAnalysis, useStockfishPlay } from './game/useStockfish'
 import { copyText } from './lib/clipboard'
 import { isAppearance, useApplyAppearance } from './lib/appearance'
+import { useGlassLight } from './lib/useGlassLight'
 import type { Appearance } from './lib/appearance'
 import { useSound } from './lib/useSound'
 import { useSpeech } from './lib/useSpeech'
@@ -154,6 +155,7 @@ export default function App() {
     isBoolean,
   )
   useApplyAppearance(appearance, reduceTransparency)
+  useGlassLight()
   const [showCoordinates, setShowCoordinates] = useStoredState('gambit.coordinates', true, isBoolean)
   const [animations, setAnimations] = useStoredState('gambit.animations', true, isBoolean)
   const [storedTempo, setStoredTempo] = useStoredState('gambit.tempo', 'none', isTempoId)
@@ -1473,9 +1475,9 @@ export default function App() {
       <svg className="svg-defs" aria-hidden="true" focusable="false">
         {/* Soft, low-frequency displacement: the toolbar glass bends what is behind it. */}
         <filter id="liquid-glass" x="0" y="0" width="100%" height="100%" colorInterpolationFilters="sRGB">
-          <feTurbulence type="fractalNoise" baseFrequency="0.006 0.02" numOctaves={2} seed={7} result="noise" />
+          <feTurbulence type="fractalNoise" baseFrequency="0.004 0.012" numOctaves={1} seed={7} result="noise" />
           <feGaussianBlur in="noise" stdDeviation="2" result="soft" />
-          <feDisplacementMap in="SourceGraphic" in2="soft" scale={28} xChannelSelector="R" yChannelSelector="G" />
+          <feDisplacementMap in="SourceGraphic" in2="soft" scale={14} xChannelSelector="R" yChannelSelector="G" />
         </filter>
       </svg>
       <PieceDefs />

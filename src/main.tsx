@@ -16,7 +16,7 @@ import App from './App'
 
 // Liquid refraction (an SVG filter inside backdrop-filter) only renders in
 // Chromium; elsewhere the glass stays a plain blur.
-if (/Chrome\//.test(navigator.userAgent) && CSS.supports('backdrop-filter', 'blur(1px)')) {
+if (/Chrome\/\d/.test(navigator.userAgent) && CSS.supports('backdrop-filter', 'blur(1px)')) {
   document.documentElement.classList.add('liquid')
 }
 

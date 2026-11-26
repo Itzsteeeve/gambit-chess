@@ -2,7 +2,8 @@
    Gambit Glass — design tokens
    1. Primitives (type, shape, spacing, motion, layout) — same in every
       appearance.
-   2. Appearance sets: dark (default) and light, switched by
+   2. Appearance sets: dark (default) and light, both tinted towards one
+      calm green, switched by
       html[data-appearance]. Everything colour-related lives here.
    3. Materials: three glass thicknesses (thin / regular / thick) that
       float over the ambient backdrop. html[data-transparency='reduced']
@@ -134,16 +135,18 @@
 [data-appearance='dark'] {
   color-scheme: dark;
 
-  /* Backdrop: near-black with three soft colour fields the glass refracts. */
-  --bg: #07080d;
-  --ambient-1: rgb(48 86 190 / 0.55);
-  --ambient-2: rgb(20 140 140 / 0.42);
-  --ambient-3: rgb(124 66 190 / 0.45);
-  --ambient-4: rgb(220 120 80 / 0.16);
+  /* Backdrop: green-black with low, muted light fields the glass refracts.
+     Kept close to the base on purpose: depth, not colour. */
+  --bg: #0a0f0d;
+  --ambient-1: rgb(52 120 88 / 0.34);
+  --ambient-2: rgb(34 92 86 / 0.26);
+  --ambient-3: rgb(78 104 72 / 0.22);
+  --ambient-4: rgb(170 150 104 / 0.08);
+  --grain-opacity: 0.05;
 
   /* Opaque surfaces: fallback for reduced transparency, popover lists. */
-  --surface: #15161d;
-  --surface-solid: #1b1c24;
+  --surface: #121815;
+  --surface-solid: #18201c;
   /* Controls and states on top of glass. */
   --surface-2: rgb(255 255 255 / 0.07);
   --surface-3: rgb(255 255 255 / 0.13);
@@ -153,21 +156,22 @@
   --line-strong: rgb(255 255 255 / 0.16);
 
   --text-bright: #ffffff;
-  --text: #f2f3f7;
-  --text-soft: #c7c9d3;
-  --muted: #8f929e;
-  --faint: #5f626e;
+  --text: #eef2ef;
+  --text-soft: #c4ccc7;
+  --muted: #8c9690;
+  --faint: #5c6660;
 
-  --shell-piece-backdrop: #c2c0ba; /* behind black pieces shown outside the board */
+  --shell-piece-backdrop: #c2c4bd; /* behind black pieces shown outside the board */
 
-  /* UI accent: one system blue. */
-  --primary-rgb: 10 132 255;
+  /* One green: primary action, selection, progress. A calm sage-emerald,
+     not the saturated "club" green of the old look. */
+  --primary-rgb: 104 196 146;
   --primary: rgb(var(--primary-rgb));
-  --primary-hover: #3d9bff;
-  --primary-press: #0870dd;
-  --on-primary: #ffffff;
-  --primary-soft: rgb(var(--primary-rgb) / 0.18);
-  --primary-line: rgb(var(--primary-rgb) / 0.55);
+  --primary-hover: #7fd0a3;
+  --primary-press: #56b07f;
+  --on-primary: #08160f;
+  --primary-soft: rgb(var(--primary-rgb) / 0.15);
+  --primary-line: rgb(var(--primary-rgb) / 0.5);
 
   /* Chess "good": best move, user arrows, engine agreement. */
   --good-rgb: 129 182 76;
@@ -182,8 +186,8 @@
   --danger-press: #e0372d;
   --danger-soft: rgb(var(--danger-rgb) / 0.16);
 
-  /* Premove only: violet, never confused with the UI blue or the hint amber. */
-  --premove-rgb: 150 120 255;
+  /* Premove only: a cool blue that never competes with green (move) or amber (hint). */
+  --premove-rgb: 96 156 230;
   --premove: rgb(var(--premove-rgb));
   --premove-soft: rgb(var(--premove-rgb) / 0.18);
 
@@ -195,18 +199,19 @@
   --graph-white: var(--ivory);
   --graph-black: var(--ink-soft);
 
-  --overlay: rgb(2 3 8 / 0.42);
+  --overlay: rgb(3 6 5 / 0.45);
   --hover-wash: rgb(255 255 255 / 0.07);
   --press-wash: rgb(255 255 255 / 0.11);
 
   /* Glass material */
-  --glass-thin: rgb(34 36 46 / 0.44);
-  --glass-regular: rgb(24 26 35 / 0.56);
-  --glass-thick: rgb(28 30 40 / 0.74);
+  --glass-thin: rgb(30 40 35 / 0.46);
+  --glass-regular: rgb(20 28 24 / 0.58);
+  --glass-thick: rgb(24 32 28 / 0.78);
   --glass-tint-strong: rgb(255 255 255 / 0.1); /* active segment, pressed thumb */
-  --glass-edge-top: rgb(255 255 255 / 0.24);
-  --glass-edge-bottom: rgb(255 255 255 / 0.04);
-  --glass-highlight: inset 0 1px 0 rgb(255 255 255 / 0.1);
+  --glass-edge-top: rgb(230 255 240 / 0.2);
+  --glass-edge-bottom: rgb(230 255 240 / 0.03);
+  --glass-highlight: inset 0 1px 0 rgb(255 255 255 / 0.08);
+  --glass-specular: rgb(220 255 235 / 0.07); /* pointer light */
   --glass-shadow: 0 18px 50px -18px rgb(0 0 0 / 0.75), 0 2px 8px rgb(0 0 0 / 0.25);
   --glass-shadow-sm: 0 6px 20px -8px rgb(0 0 0 / 0.6);
 
@@ -222,35 +227,36 @@
 [data-appearance='light'] {
   color-scheme: light;
 
-  --bg: #eef0f6;
-  --ambient-1: rgb(120 170 255 / 0.55);
-  --ambient-2: rgb(255 176 140 / 0.5);
-  --ambient-3: rgb(196 160 255 / 0.48);
-  --ambient-4: rgb(110 220 200 / 0.3);
+  --bg: #edf1ee;
+  --ambient-1: rgb(150 205 176 / 0.5);
+  --ambient-2: rgb(186 216 206 / 0.55);
+  --ambient-3: rgb(206 222 190 / 0.45);
+  --ambient-4: rgb(238 224 196 / 0.45);
+  --grain-opacity: 0.06;
 
-  --surface: #f7f8fb;
+  --surface: #f6f8f6;
   --surface-solid: #ffffff;
   --surface-2: rgb(255 255 255 / 0.62);
-  --surface-3: rgb(20 30 60 / 0.08);
-  --well: rgb(20 30 60 / 0.06);
-  --zebra: rgb(20 30 60 / 0.025);
-  --line: rgb(20 30 60 / 0.09);
-  --line-strong: rgb(20 30 60 / 0.16);
+  --surface-3: rgb(16 40 28 / 0.075);
+  --well: rgb(16 40 28 / 0.055);
+  --zebra: rgb(16 40 28 / 0.025);
+  --line: rgb(16 40 28 / 0.09);
+  --line-strong: rgb(16 40 28 / 0.16);
 
   --text-bright: #000000;
-  --text: #16171c;
-  --text-soft: #3b3e48;
-  --muted: #6a6e7a;
-  --faint: #9a9ea9;
+  --text: #141a17;
+  --text-soft: #39423d;
+  --muted: #67716b;
+  --faint: #98a19c;
 
-  --shell-piece-backdrop: #d8d6d0;
+  --shell-piece-backdrop: #d6d8d1;
 
-  --primary-rgb: 0 122 255;
-  --primary-hover: #1a88ff;
-  --primary-press: #0062cc;
+  --primary-rgb: 36 124 84;
+  --primary-hover: #2c8a5e;
+  --primary-press: #1d6845;
   --on-primary: #ffffff;
-  --primary-soft: rgb(var(--primary-rgb) / 0.12);
-  --primary-line: rgb(var(--primary-rgb) / 0.5);
+  --primary-soft: rgb(var(--primary-rgb) / 0.11);
+  --primary-line: rgb(var(--primary-rgb) / 0.45);
 
   --good-rgb: 98 158 52;
 
@@ -261,32 +267,33 @@
   --danger-press: #c92a22;
   --danger-soft: rgb(var(--danger-rgb) / 0.12);
 
-  --premove-rgb: 118 88 235;
+  --premove-rgb: 60 120 205;
   --premove-soft: rgb(var(--premove-rgb) / 0.16);
 
   --clock-run-bg: var(--ink);
   --clock-run-fg: #ffffff;
 
   --graph-white: #ffffff;
-  --graph-black: #3d3f47;
+  --graph-black: #6b746f;
 
-  --overlay: rgb(30 38 60 / 0.22);
-  --hover-wash: rgb(20 30 60 / 0.05);
-  --press-wash: rgb(20 30 60 / 0.09);
+  --overlay: rgb(20 36 28 / 0.2);
+  --hover-wash: rgb(16 40 28 / 0.05);
+  --press-wash: rgb(16 40 28 / 0.09);
 
   --glass-thin: rgb(255 255 255 / 0.46);
-  --glass-regular: rgb(255 255 255 / 0.58);
-  --glass-thick: rgb(252 253 255 / 0.8);
+  --glass-regular: rgb(252 255 253 / 0.58);
+  --glass-thick: rgb(250 253 251 / 0.82);
   --glass-tint-strong: rgb(255 255 255 / 0.85);
   --glass-edge-top: rgb(255 255 255 / 0.95);
   --glass-edge-bottom: rgb(255 255 255 / 0.3);
   --glass-highlight: inset 0 1px 0 rgb(255 255 255 / 0.85);
-  --glass-shadow: 0 18px 50px -20px rgb(40 50 90 / 0.3), 0 2px 8px rgb(40 50 90 / 0.08);
-  --glass-shadow-sm: 0 6px 18px -8px rgb(40 50 90 / 0.25);
+  --glass-specular: rgb(255 255 255 / 0.45);
+  --glass-shadow: 0 18px 50px -20px rgb(24 44 34 / 0.3), 0 2px 8px rgb(24 44 34 / 0.08);
+  --glass-shadow-sm: 0 6px 18px -8px rgb(24 44 34 / 0.25);
 
-  --shadow-pop: 0 16px 40px -12px rgb(40 50 90 / 0.3);
-  --shadow-modal: 0 40px 100px -24px rgb(40 50 90 / 0.4);
-  --board-shadow: 0 30px 70px -26px rgb(40 50 90 / 0.5), 0 4px 14px rgb(40 50 90 / 0.14);
+  --shadow-pop: 0 16px 40px -12px rgb(24 44 34 / 0.3);
+  --shadow-modal: 0 40px 100px -24px rgb(24 44 34 / 0.4);
+  --board-shadow: 0 30px 70px -26px rgb(24 44 34 / 0.5), 0 4px 14px rgb(24 44 34 / 0.14);
 }
 
 /* ------------------------------------------------------------------ */
@@ -300,6 +307,8 @@
   --glass-blur-thin: 0px;
   --glass-blur-regular: 0px;
   --glass-blur-thick: 0px;
+  --glass-specular: transparent;
+  --grain-opacity: 0;
 }
 
 /* ------------------------------------------------------------------ */

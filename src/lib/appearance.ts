@@ -13,7 +13,7 @@ export const APPEARANCES: ReadonlyArray<{ id: Appearance; label: string }> = [
 export const isAppearance = isOneOf<Appearance>(APPEARANCES.map((option) => option.id))
 
 /** Browser chrome colour per resolved appearance (matches `--bg`). */
-const THEME_COLOR = { dark: '#07080d', light: '#eef0f6' } as const
+const THEME_COLOR = { dark: '#0a0f0d', light: '#edf1ee' } as const
 
 function useMediaQuery(query: string): boolean {
   const [matches, setMatches] = useState(() =>

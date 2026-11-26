@@ -24,12 +24,13 @@ body {
   background: transparent;
 }
 
-/* Soft colour fields under everything. Static: nothing loops. */
+/* Soft light fields under everything. They drift very slowly (a minute per
+   pass) so the glass feels alive without anything visibly moving. */
 .app::before {
   content: '';
   position: fixed;
-  inset: 0;
-  z-index: -1;
+  inset: -8%;
+  z-index: -2;
   pointer-events: none;
   background:
     radial-gradient(42% 52% at 8% 12%, var(--ambient-1), transparent 72%),
@@ -37,6 +38,32 @@ body {
     radial-gradient(48% 58% at 78% 96%, var(--ambient-2), transparent 72%),
     radial-gradient(32% 40% at 22% 92%, var(--ambient-4), transparent 72%),
     var(--bg);
+  animation: ambient-drift 60s var(--ease-in-out) infinite alternate;
+}
+
+@keyframes ambient-drift {
+  from {
+    transform: translate3d(-2%, -1.5%, 0) scale(1);
+  }
+  to {
+    transform: translate3d(2%, 1.5%, 0) scale(1.05);
+  }
+}
+
+/* Film grain: breaks up the gradients so they never look rendered. */
+.app::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: var(--grain-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 1.4 -0.2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+}
+
+html[data-motion='off'] .app::before {
+  animation: none;
 }
 
 /* ------------------------------------------------------------------ */
@@ -88,6 +115,35 @@ body {
   background: var(--glass-thick);
   -webkit-backdrop-filter: blur(var(--glass-blur-thick)) saturate(var(--glass-saturate));
   backdrop-filter: blur(var(--glass-blur-thick)) saturate(var(--glass-saturate));
+}
+
+/* Pointer light: a soft specular spot that follows the cursor across the
+   glass (coordinates from lib/useGlassLight.ts) and glides after it. */
+@property --mx {
+  syntax: '<length-percentage>';
+  inherits: false;
+  initial-value: 50%;
+}
+
+@property --my {
+  syntax: '<length-percentage>';
+  inherits: false;
+  initial-value: -60%;
+}
+
+.header-inner,
+.side-panel-inner,
+.start-card,
+.board-toolbar,
+.modal-panel {
+  background-image: radial-gradient(
+    320px circle at var(--mx) var(--my),
+    var(--glass-specular),
+    transparent 70%
+  );
+  transition:
+    --mx 420ms var(--ease-out),
+    --my 420ms var(--ease-out);
 }
 
 /* Light edge: brighter at the top, fading towards the bottom, drawn as a
@@ -261,11 +317,15 @@ body {
   border-radius: var(--radius-lg);
 }
 
-/* Tabs become an iOS-style segmented control. */
+/* Tabs become a segmented control; the thumb slides (and slightly
+   overshoots) to the chosen tab. --i / --n come from SidePanel. */
 .side-tabs {
+  --pad: 3px;
+  position: relative;
+  isolation: isolate;
   margin: var(--space-3) var(--space-3) var(--space-1);
-  padding: 3px;
-  gap: 2px;
+  padding: var(--pad);
+  gap: 0;
   border-bottom: 0;
   border-radius: var(--radius-pill);
   background: var(--well);
@@ -285,12 +345,26 @@ body {
   display: none;
 }
 
-.side-tab.is-active {
+.side-tabs::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: var(--pad);
+  bottom: var(--pad);
+  left: var(--pad);
+  width: calc((100% - 2 * var(--pad)) / var(--n, 3));
+  border-radius: var(--radius-pill);
   background: var(--glass-tint-strong);
   box-shadow:
     var(--glass-highlight),
     0 0 0 1px var(--line),
-    0 2px 8px -2px rgb(0 0 0 / 0.25);
+    0 2px 8px -3px rgb(0 0 0 / 0.3);
+  transform: translateX(calc(var(--i, 0) * 100%));
+  transition: transform 380ms var(--ease-spring);
+}
+
+.side-tab.is-active {
+  background: transparent;
 }
 
 /* Rows scroll under a frosted column header. */
@@ -313,7 +387,7 @@ body {
   border-radius: var(--radius-pill);
 }
 
-/* Primary: a lit pill — top sheen, soft coloured shadow. */
+/* Primary: a lit pill — a faint top sheen, no coloured glow. */
 .button--primary,
 .button--primary:hover:not(:disabled),
 .button--primary:active:not(:disabled),
@@ -321,20 +395,19 @@ body {
 .toolbar-result-button:hover,
 .button--danger,
 .button--danger:hover:not(:disabled) {
-  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.22), rgb(255 255 255 / 0) 60%);
+  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.14), rgb(255 255 255 / 0) 55%);
 }
 
 .button--primary,
-.toolbar-result-button {
+.toolbar-result-button,
+.button--danger,
+.modal-footer .button--primary,
+.modal-footer .button--primary:hover:not(:disabled),
+.modal-footer .button--primary:active:not(:disabled),
+.review-bar-exit {
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.3),
-    0 8px 20px -10px rgb(var(--primary-rgb) / 0.9);
-}
-
-.button--danger {
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.25),
-    0 8px 20px -10px rgb(var(--danger-rgb) / 0.9);
+    inset 0 1px 0 rgb(255 255 255 / 0.22),
+    0 1px 2px rgb(0 0 0 / 0.18);
 }
 
 /* Ghost: a sheet of thin glass. */
@@ -524,4 +597,36 @@ input[type='range']::-moz-range-thumb {
 .start-title {
   font-family: var(--font-display);
   letter-spacing: -0.03em;
+}
+
+/* ------------------------------------------------------------------ */
+/* Entrances: once, on mount, short                                   */
+/* ------------------------------------------------------------------ */
+
+@keyframes glass-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.start-preview,
+.start-card,
+.app-main > .play-stage,
+.app-main > .side-panel {
+  animation: glass-rise 560ms var(--ease-out) both;
+}
+
+.start-card,
+.app-main > .side-panel {
+  animation-delay: 90ms;
+}
+
+/* Tab content settles in rather than popping. */
+.side-panel-content {
+  animation-duration: 240ms;
 }

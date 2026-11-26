@@ -19,10 +19,10 @@ Chess in the browser. Play against Stockfish 19 (from 250 Elo up to full strengt
 - **Post-game analysis**: accuracy and the count of every rating (brilliant, great, best … blunder) for both sides, a list of the brilliant and great moves, a "Next mistake" button and up to three **key moments** with the coach's explanation. Unanalysed positions are completed in the background after the game (also in local games), with a progress indicator.
 - **Play from here** ("Hrát odsud"): while reviewing, or after a game that ended on a playable position, start a new game from the shown position. A dialog picks the opponent, level, colour and clock; "Odveta" and a level change replay the same position.
 - **Import** ("Importovat partii" on the start screen, "Import" under the move list): paste a **PGN** to open it in review with the coach, accuracies and the graph, or a **FEN** to play from that position. From a PGN only the main line of the first game is read; chess variants are refused, as are illegal positions.
-- **Premoves**: while Stockfish thinks you can queue your next move (violet highlight and arrow); it plays itself once it is your turn and the move is still legal. Right click or Esc cancels it.
+- **Premoves**: while Stockfish thinks you can queue your next move (blue highlight and arrow); it plays itself once it is your turn and the move is still legal. Right click or Esc cancels it.
 - **Arrows and marks**: right-drag draws arrows, right-click draws circles; Shift = red, Ctrl = orange, Alt = blue. They disappear on the next move or left click.
 - Clocks (none, 3+2, 5+0, 10+0, 15+10), resign, draw by agreement, rematch, undo/redo, board flip, PGN and FEN to clipboard.
-- **Glass look** with a dark and a light appearance (Settings → Vzhled: system / light / dark) and a "reduce transparency" switch for opaque surfaces.
+- **Calm green glass look** with a dark and a light appearance (Settings → Vzhled: system / light / dark) and a "reduce transparency" switch for opaque surfaces.
 - 6 board themes (Emerald, Walnut, Midnight, Blush, Slate, Frost) and 3 piece sets (Chessnut by default, Ivory & Onyx, Terracotta), switchable in the "Sada" tab or in Settings.
 - The "Partie" tab holds the coach, both accuracies with the evaluation graph and the move list.
 - Sounds, animations (can be turned off; `prefers-reduced-motion` is respected), responsive layout down to 320 px.

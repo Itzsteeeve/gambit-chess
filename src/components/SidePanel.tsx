@@ -1,5 +1,5 @@
 import { useId, useState } from 'react'
-import type { KeyboardEvent, ReactNode } from 'react'
+import type { CSSProperties, KeyboardEvent, ReactNode } from 'react'
 import type { Color, Move } from 'chess.js'
 import { Crown, Info, ListOrdered } from 'lucide-react'
 import type { BoardThemeId } from '../game/constants'
@@ -90,7 +90,13 @@ export function SidePanel({
   return (
     <aside className="side-panel" aria-label="Informace o partii">
       <div className="side-panel-inner">
-        <div className="side-tabs" role="tablist" aria-label="Panel partie" onKeyDown={handleTabKeyDown}>
+        <div
+          className="side-tabs"
+          role="tablist"
+          aria-label="Panel partie"
+          onKeyDown={handleTabKeyDown}
+          style={{ '--i': Math.max(0, TABS.findIndex((tab) => tab.id === activeTab)), '--n': TABS.length } as CSSProperties}
+        >
           {TABS.map((tab) => {
             const Icon = tab.icon
             return (
