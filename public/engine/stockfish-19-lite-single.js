@@ -1,3 +1,18 @@
+// Fallback when WebAssembly.instantiateStreaming fails (e.g. compressed synthetic Response).
+if (typeof WebAssembly === 'object' && typeof WebAssembly.instantiateStreaming === 'function') {
+  const _origInstantiateStreaming = WebAssembly.instantiateStreaming.bind(WebAssembly);
+  WebAssembly.instantiateStreaming = function (source, importObject) {
+    return Promise.resolve(source).then(function (res) {
+      const clone = res && typeof res.clone === 'function' ? res.clone() : null;
+      return _origInstantiateStreaming(res, importObject).catch(function (err) {
+        if (!clone) throw err;
+        return clone.arrayBuffer().then(function (buf) {
+          return WebAssembly.instantiate(buf, importObject);
+        });
+      });
+    });
+  };
+}
 /*!
  * Stockfish.js 19 (c) 2026, Chess.com, LLC
  * https://github.com/nmrugg/stockfish.js

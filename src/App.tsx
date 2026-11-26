@@ -62,6 +62,7 @@ import type { Puzzle } from './game/puzzles'
 import { fenTurn, highlightMoves, keyMoments, nextMistakePly } from './game/review'
 import { useChessClock } from './game/useChessClock'
 import type { ClockSnapshot } from './game/useChessClock'
+import { clearGameSession, loadGameSession, saveGameSession } from './game/gameSession'
 import { useChessGame } from './game/useChessGame'
 import { useEngineAnalysis, useStockfishPlay } from './game/useStockfish'
 import { copyText } from './lib/clipboard'
@@ -168,12 +169,19 @@ export default function App() {
 
   const engineLevel = useMemo(() => getEngineLevel(engineLevelId), [engineLevelId])
 
-  // The game is not persisted, so every load starts on the home screen.
-  const [screen, setScreen] = useState<Screen>('home')
+  const initialSessionRef = useRef<ReturnType<typeof loadGameSession> | undefined>(undefined)
+  if (initialSessionRef.current === undefined) {
+    initialSessionRef.current = loadGameSession()
+  }
+  const initialSession = initialSessionRef.current
+  const restoringSessionRef = useRef(initialSession !== null)
+  const pendingClockRestoreRef = useRef<ClockSnapshot | null>(initialSession?.clock ?? null)
+
+  const [screen, setScreen] = useState<Screen>(() => (initialSession ? 'game' : 'home'))
   /** Colour the human plays against Stockfish in the current game. */
-  const [humanColor, setHumanColor] = useState<Color>('w')
+  const [humanColor, setHumanColor] = useState<Color>(() => initialSession?.humanColor ?? 'w')
   const engineColor = opposite(humanColor)
-  const [gameHandicap, setGameHandicap] = useState<HandicapId>('none')
+  const [gameHandicap, setGameHandicap] = useState<HandicapId>(() => initialSession?.gameHandicap ?? 'none')
   /** Position the current game was started from by "Hrát odsud" or a FEN import. */
   const [positionStart, setPositionStart] = useState<string | null>(null)
   /** Position offered by the "Hrát z pozice" dialog. */
@@ -181,14 +189,16 @@ export default function App() {
   /** Set while the board shows an imported game record. */
   const [imported, setImported] = useState<ImportedGame | null>(null)
 
-  const [timeControl, setTimeControl] = useState<TimeControl>(() => getTimeControl(storedTempo))
+  const [timeControl, setTimeControl] = useState<TimeControl>(() =>
+    getTimeControl(initialSession?.timeControlId ?? storedTempo),
+  )
   const [selected, setSelected] = useState<Square | null>(null)
   const [promotion, setPromotion] = useState<PromotionState | null>(null)
   const [captureFx, setCaptureFx] = useState<CaptureFx | null>(null)
   const [dialog, setDialog] = useState<DialogId>(null)
   const [resigningColor, setResigningColor] = useState<Color>('w')
   const [gameOverOpen, setGameOverOpen] = useState(false)
-  const [durationSeconds, setDurationSeconds] = useState(0)
+  const [durationSeconds, setDurationSeconds] = useState(() => initialSession?.durationSeconds ?? 0)
   /** Ply shown in read-only review (null = live position). */
   const [reviewPly, setReviewPly] = useState<number | null>(null)
   const [premove, setPremove] = useState<Premove | null>(null)
@@ -289,6 +299,103 @@ export default function App() {
     resetKey: game.gameNumber,
     onTimeout: handleTimeout,
   })
+
+  // Restore saved in-progress game from sessionStorage once on mount.
+  const gameReset = game.reset
+  const gameMove = game.move
+  useEffect(() => {
+    const saved = initialSessionRef.current
+    if (!saved) return
+    restoringSessionRef.current = false
+
+    const engine = saved.gameMode === 'stockfish'
+    const level = getEngineLevel(saved.engineLevelId)
+    const engineName = `Stockfish (${eloLabel(level)})`
+
+    setGameMode(saved.gameMode)
+    setEngineLevelId(saved.engineLevelId)
+    setOrientation(engine ? saved.humanColor : 'w')
+    clockHistoryRef.current =
+      saved.clockHistory.length > 0 ? saved.clockHistory : [initialClock(getTimeControl(saved.timeControlId))]
+
+    gameReset({
+      fen: saved.startFen,
+      event: engine ? 'Gambit — partie proti Stockfishi' : undefined,
+      white: engine ? (saved.humanColor === 'w' ? 'Hráč' : engineName) : undefined,
+      black: engine ? (saved.humanColor === 'b' ? 'Hráč' : engineName) : undefined,
+    })
+
+    for (const m of saved.moves) {
+      const res = gameMove(m.from, m.to, m.promotion)
+      if (!res.ok) {
+        clearGameSession()
+        setScreen('home')
+        return
+      }
+    }
+  }, [gameMove, gameReset, setEngineLevelId, setGameMode, setOrientation])
+
+  // Apply restored clock snapshot after useChessClock's resetKey effect runs.
+  const restoreClock = clock.restore
+  useEffect(() => {
+    const pending = pendingClockRestoreRef.current
+    if (!pending) return
+    pendingClockRestoreRef.current = null
+    restoreClock(pending)
+  }, [game.gameNumber, restoreClock])
+
+  // Persist active game to sessionStorage; clear it when the game ends, is imported, or returns home.
+  const getClockSnapshot = clock.getSnapshot
+  const persistSession = useCallback(() => {
+    if (restoringSessionRef.current) return
+    if (screen !== 'game' || game.outcome || imported) {
+      clearGameSession()
+      return
+    }
+    saveGameSession({
+      version: 1,
+      gameMode,
+      engineLevelId,
+      humanColor,
+      gameHandicap,
+      timeControlId: timeControl.id,
+      startFen: game.startFen,
+      moves: game.history.map((m) => ({
+        from: m.from,
+        to: m.to,
+        ...(m.promotion ? { promotion: m.promotion } : {}),
+      })),
+      clock: getClockSnapshot(),
+      clockHistory: clockHistoryRef.current,
+      durationSeconds,
+    })
+  }, [
+    durationSeconds,
+    engineLevelId,
+    game.history,
+    game.outcome,
+    game.startFen,
+    gameHandicap,
+    gameMode,
+    getClockSnapshot,
+    humanColor,
+    imported,
+    screen,
+    timeControl.id,
+  ])
+
+  useEffect(() => {
+    persistSession()
+  }, [persistSession])
+
+  useEffect(() => {
+    window.addEventListener('pagehide', persistSession)
+    window.addEventListener('beforeunload', persistSession)
+    return () => {
+      window.removeEventListener('pagehide', persistSession)
+      window.removeEventListener('beforeunload', persistSession)
+    }
+  }, [persistSession])
 
   // Open the result card whenever a new result is produced. An imported game
   // opens in review instead; the card stays one click away.

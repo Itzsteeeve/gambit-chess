@@ -5,7 +5,7 @@
  *
  * Runs automatically on `npm install` via the postinstall script.
  */
-import { copyFile, mkdir, access } from 'node:fs/promises'
+import { copyFile, mkdir, access, readFile, writeFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 
@@ -16,8 +16,26 @@ const target = path.join(root, 'public', 'engine')
 const files = [
   ['bin', 'stockfish-19-lite-single.js'],
   ['bin', 'stockfish-19-lite-single.wasm'],
+  ['bin', 'stockfish-19-asm.js'],
   ['root', 'Copying.txt'],
 ]
+
+const WASM_FALLBACK_SHIM = `// Fallback when WebAssembly.instantiateStreaming fails (e.g. compressed synthetic Response).
+if (typeof WebAssembly === 'object' && typeof WebAssembly.instantiateStreaming === 'function') {
+  const _origInstantiateStreaming = WebAssembly.instantiateStreaming.bind(WebAssembly);
+  WebAssembly.instantiateStreaming = function (source, importObject) {
+    return Promise.resolve(source).then(function (res) {
+      const clone = res && typeof res.clone === 'function' ? res.clone() : null;
+      return _origInstantiateStreaming(res, importObject).catch(function (err) {
+        if (!clone) throw err;
+        return clone.arrayBuffer().then(function (buf) {
+          return WebAssembly.instantiate(buf, importObject);
+        });
+      });
+    });
+  };
+}
+`
 
 async function main() {
   try {
@@ -37,6 +55,13 @@ async function main() {
       ),
     ),
   )
+
+  const engineJsPath = path.join(target, 'stockfish-19-lite-single.js')
+  const engineJs = await readFile(engineJsPath, 'utf8')
+  if (!engineJs.includes('_origInstantiateStreaming')) {
+    await writeFile(engineJsPath, WASM_FALLBACK_SHIM + engineJs, 'utf8')
+  }
+
   console.log(`[engine] Copied Stockfish 19 (lite, single-threaded) to public/engine.`)
 }
 

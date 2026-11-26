@@ -74,9 +74,29 @@ export const ENGINE_TIMEOUTS = {
   stopGrace: 2_000,
 }
 
-const ENGINE_JS = `${import.meta.env.BASE_URL}engine/stockfish-19-lite-single.js`
+const ENGINE_WASM_JS = `${import.meta.env.BASE_URL}engine/stockfish-19-lite-single.js`
+const ENGINE_ASM_JS = `${import.meta.env.BASE_URL}engine/stockfish-19-asm.js`
 
-const defaultWorkerFactory: EngineWorkerFactory = () => new Worker(ENGINE_JS) as unknown as EngineWorker
+let useAsmFallback = false
+
+function supportsWasmSimd(): boolean {
+  try {
+    return (
+      typeof WebAssembly === 'object' &&
+      typeof WebAssembly.validate === 'function' &&
+      WebAssembly.validate(
+        new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0, 1, 4, 1, 96, 0, 0, 3, 2, 1, 0, 10, 9, 1, 7, 0, 65, 0, 253, 15, 26, 11]),
+      )
+    )
+  } catch {
+    return false
+  }
+}
+
+const defaultWorkerFactory: EngineWorkerFactory = () => {
+  const url = !useAsmFallback && supportsWasmSimd() ? ENGINE_WASM_JS : ENGINE_ASM_JS
+  return new Worker(url) as unknown as EngineWorker
+}
 
 function noop() {}
 
@@ -188,6 +208,9 @@ export class UciEngine {
     worker.onerror = (event) => {
       event?.preventDefault?.()
       if (this.worker !== worker) return
+      if (this.createWorker === defaultWorkerFactory) {
+        useAsmFallback = true
+      }
       this.teardownWorker(new Error(event?.message || 'Stockfish worker failed to load'))
     }
 
