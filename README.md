@@ -2,6 +2,15 @@
 
 Chess in the browser. Play against Stockfish 19 (from 250 Elo up to full strength) or two players on one board. Everything runs locally in the browser: no server, no account. The UI is in Czech.
 
+## Versions
+
+| Branch | What it is | Needs |
+| --- | --- | --- |
+| `main` | **Without a server.** Play vs Stockfish, two players locally, review, training. A static site: `npm run build` and host `dist/` anywhere (or the Docker image below). | nothing but a static web server |
+| `server` | **With a server.** Everything from `main` plus **online multiplayer** (lobby, rooms, quick pairing, live games). A small Node server serves the app and a WebSocket. | Node or Docker, and WebSocket forwarding in the reverse proxy |
+
+New offline features go to `main` first and are merged into `server`.
+
 ## Features
 
 - **Play vs Stockfish**: 14 levels (250–2800 Elo plus "Max"); picking another level in the header immediately starts a new game. Choose your colour (White / Black / random); when you play Black, Stockfish moves first and the board turns towards you. Optional **handicap**: Stockfish starts without its f-pawn, a knight, a rook or its queen (custom start position; the PGN carries `[SetUp]` and `[FEN]` headers).
