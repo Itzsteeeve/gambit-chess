@@ -22,7 +22,8 @@ Chess in the browser. Play against Stockfish 19 (from 250 Elo up to full strengt
 - **Premoves**: while Stockfish thinks you can queue your next move (blue highlight and arrow); it plays itself once it is your turn and the move is still legal. Right click or Esc cancels it.
 - **Arrows and marks**: right-drag draws arrows, right-click draws circles; Shift = red, Ctrl = orange, Alt = blue. They disappear on the next move or left click.
 - Clocks (none, 3+2, 5+0, 10+0, 15+10), resign, draw by agreement, rematch, undo/redo, board flip, PGN and FEN to clipboard.
-- 5 board themes (Emerald, Walnut, Midnight, Blush, Slate) and 3 piece sets (Chessnut by default, Ivory & Onyx, Terracotta), switchable in the "Sada" tab or in Settings.
+- **Calm green glass look** with a dark and a light appearance (Settings → Vzhled: system / light / dark) and a "reduce transparency" switch for opaque surfaces.
+- 6 board themes (Emerald, Walnut, Midnight, Blush, Slate, Frost) and 3 piece sets (Chessnut by default, Ivory & Onyx, Terracotta), switchable in the "Sada" tab or in Settings.
 - The "Partie" tab holds the coach, both accuracies with the evaluation graph and the move list.
 - Sounds, animations (can be turned off; `prefers-reduced-motion` is respected), responsive layout down to 320 px.
 - Settings and training puzzles are stored in `localStorage` (keys `gambit.*`), so each browser has its own; a game in progress is intentionally not saved, so reloading the page shows the start screen.

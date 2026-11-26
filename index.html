@@ -3,8 +3,31 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#1b1a18" />
-    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#0a0f0d" />
+    <meta name="color-scheme" content="dark light" />
+    <script>
+      // Set the appearance before the first paint (mirrors src/lib/appearance.ts).
+      ;(function () {
+        var root = document.documentElement
+        var read = function (key) {
+          try {
+            return JSON.parse(localStorage.getItem(key))
+          } catch (e) {
+            return null
+          }
+        }
+        var choice = read('gambit.appearance')
+        var mq = function (q) {
+          return window.matchMedia && window.matchMedia(q).matches
+        }
+        var dark = choice === 'dark' || (choice !== 'light' && mq('(prefers-color-scheme: dark)'))
+        root.dataset.appearance = dark ? 'dark' : 'light'
+        root.dataset.transparency =
+          read('gambit.reduce-transparency') === true || mq('(prefers-reduced-transparency: reduce)') ? 'reduced' : 'full'
+        var meta = document.querySelector('meta[name="theme-color"]')
+        if (meta) meta.setAttribute('content', dark ? '#0a0f0d' : '#edf1ee')
+      })()
+    </script>
     <meta
       name="description"
       content="Gambit — šachy v prohlížeči proti Stockfishi (250 až 3500+ Elo) nebo ve dvou na jedné desce. Rady, hodnocení tahů a rozbor partie, vše offline."

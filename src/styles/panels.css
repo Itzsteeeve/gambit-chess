@@ -162,8 +162,8 @@
 }
 
 .player-clock.is-running {
-  background: var(--ivory);
-  color: var(--ink);
+  background: var(--clock-run-bg);
+  color: var(--clock-run-fg);
 }
 
 .player-clock.is-low {
@@ -592,7 +592,7 @@
 }
 
 .move-row:nth-child(even) {
-  background: rgb(255 255 255 / 0.025);
+  background: var(--zebra);
 }
 
 .move-number {
@@ -1358,8 +1358,20 @@
   position: relative;
   width: 100%;
   overflow: hidden;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   touch-action: manipulation;
+}
+
+/* Hairline and a faint top light drawn over the plot, like a pane of glass. */
+.eval-graph-plot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow:
+    inset 0 0 0 1px var(--line),
+    inset 0 1px 0 rgb(255 255 255 / 0.08);
+  pointer-events: none;
 }
 
 .eval-graph-plot.is-clickable {
@@ -1370,33 +1382,54 @@
   display: block;
 }
 
+/* Black's share: a tinted well, not a solid block. */
 .eval-graph-bg {
   fill: var(--graph-black);
 }
 
-.eval-graph-area {
-  fill: var(--graph-white);
-  opacity: 0.92;
+/* White's share: ivory that thins out towards the bottom. */
+.eval-graph-fill-top {
+  stop-color: var(--graph-white);
+  stop-opacity: 0.95;
+}
+
+.eval-graph-fill-bottom {
+  stop-color: var(--graph-white);
+  stop-opacity: 0.7;
+}
+
+.eval-graph-area,
+.eval-graph-line {
+  transition: d 420ms var(--ease-out);
 }
 
 .eval-graph-mid {
-  stroke: rgb(128 128 128 / 0.5);
+  stroke: var(--graph-mid);
   stroke-width: 1;
+  stroke-dasharray: 2 4;
 }
 
 .eval-graph-line {
   fill: none;
-  stroke: var(--muted);
-  stroke-width: 1;
+  stroke: var(--graph-line);
+  stroke-width: 1.25;
+  stroke-linejoin: round;
 }
 
 .eval-graph-cursor {
   stroke: var(--primary);
-  stroke-width: 2;
+  stroke-width: 1.5;
+  opacity: 0.8;
+}
+
+.eval-graph-dot {
+  fill: var(--primary);
+  stroke: var(--graph-ring);
+  stroke-width: 1.5;
 }
 
 .eval-graph-marker {
-  stroke: var(--surface);
+  stroke: var(--graph-ring);
   stroke-width: 1.5;
 }
 
@@ -1490,7 +1523,7 @@
 }
 
 .review-bar-best {
-  color: var(--primary);
+  color: var(--good);
 }
 
 /* Secondary info yields first when the bar gets tight. */

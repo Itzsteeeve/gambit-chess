@@ -1,109 +1,46 @@
 /* ==================================================================
-   Gambit design tokens
-   One warm-neutral shell, one green, one gold (rare), one amber (hints),
-   one red (danger). Everything else is derived with color-mix().
+   Gambit Glass — design tokens
+   1. Primitives (type, shape, spacing, motion, layout) — same in every
+      appearance.
+   2. Appearance sets: dark (default) and light, both tinted towards one
+      calm green, switched by
+      html[data-appearance]. Everything colour-related lives here.
+   3. Materials: three glass thicknesses (thin / regular / thick) that
+      float over the ambient backdrop. html[data-transparency='reduced']
+      turns them into opaque surfaces.
+   Board themes ([data-theme]) are independent of the appearance.
    ================================================================== */
 
 :root {
   /* Typography ---------------------------------------------------- */
-  --font-ui: 'Inter Variable', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-display: var(--font-ui);
+  --font-ui:
+    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter Variable', 'Inter', system-ui,
+    'Segoe UI', sans-serif;
+  --font-display:
+    -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter Variable', 'Inter', system-ui,
+    'Segoe UI', sans-serif;
   --font-brand: 'Space Grotesk Variable', 'Space Grotesk', var(--font-ui);
-  --font-mono: ui-monospace, 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+  --font-mono: ui-monospace, 'SF Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
 
   --fs-xs: 12px; /* meta, captions, column headers */
   --fs-sm: 13px; /* body / controls */
   --fs-md: 15px; /* emphasis, section titles */
   --fs-lg: 20px; /* dialog titles, clocks */
-  --fs-xl: 28px; /* display numbers */
-  --fs-2xl: 40px; /* hero numbers */
+  --fs-xl: 30px; /* display numbers */
+  --fs-2xl: 44px; /* hero numbers */
 
   --fw-regular: 400;
   --fw-medium: 500;
   --fw-semibold: 600;
   --fw-bold: 700;
 
-  /* Shell (one warm-neutral hue family, ~40deg) ------------------- */
-  --bg: #1b1a18;
-  --surface: #262522;
-  --surface-2: #2e2c29;
-  --surface-3: #383633;
-  --line: #34322e;
-  --line-strong: #4a4743;
-
-  --text-bright: #ffffff;
-  --text: #ecebe7;
-  --text-soft: #c8c6c0;
-  --muted: #9b9891;
-  --faint: #6f6c66;
-
-  /* Piece-colour neutrals (clock, eval bar, avatars) */
-  --ivory: #f4f3ef;
-  --ink: #1b1a18;
-  --ink-soft: #403d39;
-  --shell-piece-backdrop: #b9b5ac; /* behind black pieces shown outside the board */
-
-  /* Accents -------------------------------------------------------- */
-  --primary-rgb: 129 182 76;
-  --primary: rgb(var(--primary-rgb)); /* #81b64c */
-  --primary-hover: #95c560;
-  --primary-press: #6e9e3e;
-  --on-primary: #10160b;
-  --primary-soft: rgb(var(--primary-rgb) / 0.14);
-  --primary-line: rgb(var(--primary-rgb) / 0.5);
-
-  --gold-rgb: 226 184 79;
-  --gold: rgb(var(--gold-rgb)); /* winner + brand only */
-  --gold-soft: rgb(var(--gold-rgb) / 0.14);
-
-  --amber-rgb: 245 158 52;
-  --amber: rgb(var(--amber-rgb)); /* hints only */
-  --amber-soft: rgb(var(--amber-rgb) / 0.14);
-
-  --danger-rgb: 224 82 74;
-  --danger: rgb(var(--danger-rgb));
-  --danger-press: #c4433c;
-  --danger-soft: rgb(var(--danger-rgb) / 0.14);
-
-  /* Premove only: a cool blue that never competes with green (move) or amber (hint). */
-  --premove-rgb: 92 152 224;
-  --premove: rgb(var(--premove-rgb));
-  --premove-soft: rgb(var(--premove-rgb) / 0.16);
-
-  /* Move-quality tones (graph markers, summary). Same values as MOVE_RATING_META. */
-  --tone-brilliant: #1baca6;
-  --tone-best: #7fa650;
-  --tone-inaccuracy: #f0c15c;
-  --tone-mistake: #e68f44;
-  --tone-blunder: #ca3431;
-
-  /* Eval graph */
-  --graph-white: var(--ivory);
-  --graph-black: var(--ink-soft);
-
-  /* Legacy aliases kept so older selectors resolve to the palette */
-  --accent: var(--gold);
-  --accent-soft: var(--gold-soft);
-  --border: var(--line);
-  --border-soft: var(--line);
-  --border-strong: var(--line-strong);
-  --muted-strong: var(--text-soft);
-  --surface-raised: var(--surface-2);
-  --surface-soft: var(--surface-3);
-  --surface-hover: var(--surface-3);
-
-  --overlay: rgb(0 0 0 / 0.55);
-  --hover-wash: rgb(255 255 255 / 0.05);
-  --press-wash: rgb(255 255 255 / 0.08);
-
   /* Shape ---------------------------------------------------------- */
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 10px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 22px;
+  --radius-xl: 30px;
+  --radius-board: 14px;
   --radius-pill: 999px;
-
-  --shadow-pop: 0 8px 24px rgb(0 0 0 / 0.4);
-  --shadow-modal: 0 24px 64px rgb(0 0 0 / 0.5);
 
   /* Spacing (4px base) -------------------------------------------- */
   --space-1: 4px;
@@ -123,6 +60,7 @@
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-move: cubic-bezier(0.35, 0.05, 0.15, 1); /* gentle take-off, soft landing */
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1); /* glass settling into place */
   --dur-press: 100ms;
   --dur-fast: 160ms;
   --dur-move: 220ms;
@@ -130,17 +68,23 @@
   --dur-modal: 200ms;
   --dur-hover: var(--dur-fast);
 
+  /* Glass geometry ------------------------------------------------- */
+  --glass-blur-thin: 16px;
+  --glass-blur-regular: 28px;
+  --glass-blur-thick: 44px;
+  --glass-saturate: 180%;
+
   /* Layout --------------------------------------------------------- */
-  --header-h: 56px;
+  --header-h: 64px; /* floating capsule + its margin */
   --page-pad-x: 32px;
-  --page-pad-y: 28px;
+  --page-pad-y: 20px;
   --col-gap: 32px; /* smallest space between the board and the side panel */
   --sidebar-w: 390px;
   --strip-h: 48px;
-  --toolbar-h: 44px;
+  --toolbar-h: 48px;
   --stage-gap: 8px;
   --eval-w: 24px;
-  --eval-gap: 8px;
+  --eval-gap: 10px;
   --board-max: 1080px;
 
   /* Board fills the viewport height minus the chrome around it, and never
@@ -155,6 +99,23 @@
   );
   --board-size: max(280px, min(var(--board-by-height), var(--board-by-width), var(--board-max)));
 
+  /* Fixed accents (same in both appearances) ---------------------- */
+  --gold-rgb: 230 186 76;
+  --gold: rgb(var(--gold-rgb)); /* winner + brand only */
+  --gold-soft: rgb(var(--gold-rgb) / 0.16);
+
+  /* Move-quality tones (graph markers, summary). Same values as MOVE_RATING_META. */
+  --tone-brilliant: #1baca6;
+  --tone-best: #7fa650;
+  --tone-inaccuracy: #f0c15c;
+  --tone-mistake: #e68f44;
+  --tone-blunder: #ca3431;
+
+  /* Piece-colour neutrals (clock, eval bar, avatars) */
+  --ivory: #f6f5f1;
+  --ink: #16171c;
+  --ink-soft: #3d3f47;
+
   /* Board theme: Emerald (default) -------------------------------- */
   --board-light: #ebecd0;
   --board-dark: #739552;
@@ -165,6 +126,199 @@
   --board-hint-dot: rgb(0 0 0 / 0.14);
   --board-check: var(--danger);
 }
+
+/* ------------------------------------------------------------------ */
+/* Dark appearance (default)                                          */
+/* ------------------------------------------------------------------ */
+
+:root,
+[data-appearance='dark'] {
+  color-scheme: dark;
+
+  /* Backdrop: green-black with low, muted light fields the glass refracts.
+     Kept close to the base on purpose: depth, not colour. */
+  --bg: #0a0f0d;
+  --ambient-1: rgb(52 120 88 / 0.34);
+  --ambient-2: rgb(34 92 86 / 0.26);
+  --ambient-3: rgb(78 104 72 / 0.22);
+  --ambient-4: rgb(170 150 104 / 0.08);
+  --grain-opacity: 0.05;
+
+  /* Opaque surfaces: fallback for reduced transparency, popover lists. */
+  --surface: #121815;
+  --surface-solid: #18201c;
+  /* Controls and states on top of glass. */
+  --surface-2: rgb(255 255 255 / 0.07);
+  --surface-3: rgb(255 255 255 / 0.13);
+  --well: rgb(0 0 0 / 0.28); /* inset tracks, inputs */
+  --group: rgb(255 255 255 / 0.045); /* grouped rows inside glass */
+  --zebra: rgb(255 255 255 / 0.025);
+  --line: rgb(255 255 255 / 0.08);
+  --line-strong: rgb(255 255 255 / 0.16);
+
+  --text-bright: #ffffff;
+  --text: #eef2ef;
+  --text-soft: #c4ccc7;
+  --muted: #8c9690;
+  --faint: #5c6660;
+
+  --shell-piece-backdrop: #c2c4bd; /* behind black pieces shown outside the board */
+
+  /* One green: primary action, selection, progress. A calm sage-emerald,
+     not the saturated "club" green of the old look. */
+  --primary-rgb: 104 196 146;
+  --primary: rgb(var(--primary-rgb));
+  --primary-hover: #7fd0a3;
+  --primary-press: #56b07f;
+  --on-primary: #08160f;
+  --primary-soft: rgb(var(--primary-rgb) / 0.15);
+  --primary-line: rgb(var(--primary-rgb) / 0.5);
+
+  /* Chess "good": best move, user arrows, engine agreement. */
+  --good-rgb: 129 182 76;
+  --good: rgb(var(--good-rgb));
+
+  --amber-rgb: 255 167 38;
+  --amber: rgb(var(--amber-rgb)); /* hints only */
+  --amber-soft: rgb(var(--amber-rgb) / 0.16);
+
+  --danger-rgb: 255 79 68;
+  --danger: rgb(var(--danger-rgb));
+  --danger-press: #e0372d;
+  --danger-soft: rgb(var(--danger-rgb) / 0.16);
+
+  /* Premove only: a cool blue that never competes with green (move) or amber (hint). */
+  --premove-rgb: 96 156 230;
+  --premove: rgb(var(--premove-rgb));
+  --premove-soft: rgb(var(--premove-rgb) / 0.18);
+
+  /* Running clock */
+  --clock-run-bg: var(--ivory);
+  --clock-run-fg: var(--ink);
+
+  /* Eval graph */
+  --graph-white: var(--ivory);
+  --graph-black: rgb(0 0 0 / 0.34);
+  --graph-line: rgb(255 255 255 / 0.75);
+  --graph-mid: rgb(255 255 255 / 0.22);
+  --graph-ring: #121815;
+
+  --overlay: rgb(3 6 5 / 0.45);
+  --hover-wash: rgb(255 255 255 / 0.07);
+  --press-wash: rgb(255 255 255 / 0.11);
+
+  /* Glass material */
+  --glass-thin: rgb(30 40 35 / 0.46);
+  --glass-regular: rgb(20 28 24 / 0.58);
+  --glass-thick: rgb(24 32 28 / 0.78);
+  --glass-tint-strong: rgb(255 255 255 / 0.1); /* active segment, pressed thumb */
+  --glass-edge-top: rgb(230 255 240 / 0.2);
+  --glass-edge-bottom: rgb(230 255 240 / 0.03);
+  --glass-highlight: inset 0 1px 0 rgb(255 255 255 / 0.08);
+  --glass-shadow: 0 18px 50px -18px rgb(0 0 0 / 0.75), 0 2px 8px rgb(0 0 0 / 0.25);
+  --glass-shadow-sm: 0 6px 20px -8px rgb(0 0 0 / 0.6);
+
+  --shadow-pop: 0 16px 40px -10px rgb(0 0 0 / 0.6);
+  --shadow-modal: 0 40px 100px -20px rgb(0 0 0 / 0.75);
+  --board-shadow: 0 30px 70px -24px rgb(0 0 0 / 0.85), 0 4px 14px rgb(0 0 0 / 0.35);
+}
+
+/* ------------------------------------------------------------------ */
+/* Light appearance                                                   */
+/* ------------------------------------------------------------------ */
+
+[data-appearance='light'] {
+  color-scheme: light;
+
+  --bg: #edf1ee;
+  --ambient-1: rgb(150 205 176 / 0.5);
+  --ambient-2: rgb(186 216 206 / 0.55);
+  --ambient-3: rgb(206 222 190 / 0.45);
+  --ambient-4: rgb(238 224 196 / 0.45);
+  --grain-opacity: 0.06;
+
+  --surface: #f6f8f6;
+  --surface-solid: #ffffff;
+  --surface-2: rgb(255 255 255 / 0.62);
+  --surface-3: rgb(16 40 28 / 0.075);
+  --well: rgb(16 40 28 / 0.055);
+  --group: rgb(255 255 255 / 0.6);
+  --zebra: rgb(16 40 28 / 0.025);
+  --line: rgb(16 40 28 / 0.09);
+  --line-strong: rgb(16 40 28 / 0.16);
+
+  --text-bright: #000000;
+  --text: #141a17;
+  --text-soft: #39423d;
+  --muted: #67716b;
+  --faint: #98a19c;
+
+  --shell-piece-backdrop: #d6d8d1;
+
+  --primary-rgb: 36 124 84;
+  --primary-hover: #2c8a5e;
+  --primary-press: #1d6845;
+  --on-primary: #ffffff;
+  --primary-soft: rgb(var(--primary-rgb) / 0.11);
+  --primary-line: rgb(var(--primary-rgb) / 0.45);
+
+  --good-rgb: 98 158 52;
+
+  --amber-rgb: 230 132 0;
+  --amber-soft: rgb(var(--amber-rgb) / 0.14);
+
+  --danger-rgb: 232 52 44;
+  --danger-press: #c92a22;
+  --danger-soft: rgb(var(--danger-rgb) / 0.12);
+
+  --premove-rgb: 60 120 205;
+  --premove-soft: rgb(var(--premove-rgb) / 0.16);
+
+  --clock-run-bg: var(--ink);
+  --clock-run-fg: #ffffff;
+
+  --graph-white: #ffffff;
+  --graph-black: rgb(28 44 36 / 0.58);
+  --graph-line: rgb(28 44 36 / 0.3);
+  --graph-mid: rgb(28 44 36 / 0.25);
+  --graph-ring: #ffffff;
+
+  --overlay: rgb(20 36 28 / 0.2);
+  --hover-wash: rgb(16 40 28 / 0.05);
+  --press-wash: rgb(16 40 28 / 0.09);
+
+  --glass-thin: rgb(255 255 255 / 0.46);
+  --glass-regular: rgb(252 255 253 / 0.58);
+  --glass-thick: rgb(250 253 251 / 0.82);
+  --glass-tint-strong: rgb(255 255 255 / 0.85);
+  --glass-edge-top: rgb(255 255 255 / 0.95);
+  --glass-edge-bottom: rgb(255 255 255 / 0.3);
+  --glass-highlight: inset 0 1px 0 rgb(255 255 255 / 0.85);
+  --glass-shadow: 0 18px 50px -20px rgb(24 44 34 / 0.3), 0 2px 8px rgb(24 44 34 / 0.08);
+  --glass-shadow-sm: 0 6px 18px -8px rgb(24 44 34 / 0.25);
+
+  --shadow-pop: 0 16px 40px -12px rgb(24 44 34 / 0.3);
+  --shadow-modal: 0 40px 100px -24px rgb(24 44 34 / 0.4);
+  --board-shadow: 0 30px 70px -26px rgb(24 44 34 / 0.5), 0 4px 14px rgb(24 44 34 / 0.14);
+}
+
+/* ------------------------------------------------------------------ */
+/* Reduced transparency: glass becomes opaque, no blur                */
+/* ------------------------------------------------------------------ */
+
+[data-transparency='reduced'] {
+  --glass-thin: var(--surface-solid);
+  --glass-regular: var(--surface);
+  --glass-thick: var(--surface-solid);
+  --glass-blur-thin: 0px;
+  --glass-blur-regular: 0px;
+  --glass-blur-thick: 0px;
+  --grain-opacity: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Board themes                                                       */
+/* ------------------------------------------------------------------ */
 
 [data-theme='walnut'] {
   --board-light: #f0d9b5;
@@ -196,7 +350,7 @@
   --board-hint-dot: rgb(60 20 30 / 0.15);
 }
 
-/* New: Slate — cool stone, low saturation, quiet under any piece set. */
+/* Slate — cool stone, low saturation, quiet under any piece set. */
 [data-theme='slate'] {
   --board-light: #d5d8d4;
   --board-dark: #7f8a86;
@@ -205,4 +359,15 @@
   --board-last: rgb(250 212 92 / 0.45);
   --board-selected: rgb(250 212 92 / 0.55);
   --board-hint-dot: rgb(10 20 18 / 0.16);
+}
+
+/* Frost — pale ice and blue-grey, made to sit under glass. */
+[data-theme='frost'] {
+  --board-light: #e8eef5;
+  --board-dark: #8fa3bd;
+  --coord-on-light: #7489a6;
+  --coord-on-dark: #f1f5fa;
+  --board-last: rgb(120 200 255 / 0.42);
+  --board-selected: rgb(120 200 255 / 0.55);
+  --board-hint-dot: rgb(20 40 70 / 0.16);
 }

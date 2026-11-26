@@ -1,6 +1,6 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useId, useLayoutEffect, useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
-import { graphPoints, plyAtX } from '../game/review'
+import { graphPoints, plyAtX, smoothPath } from '../game/review'
 import { cx } from '../lib/cx'
 
 export type GraphMarkerTone = 'brilliant' | 'inaccuracy' | 'mistake' | 'blunder'
@@ -49,6 +49,7 @@ export function EvalGraph({
   className,
 }: EvalGraphProps) {
   const [ref, width] = useWidth<HTMLDivElement>()
+  const gradientId = `eval-fill-${useId().replace(/:/g, '')}`
   const height = compact ? 52 : 88
   const points = width > 0 ? graphPoints(series, width, height) : []
   const byPly = new Map(points.map((point) => [point.ply, point]))
@@ -59,12 +60,13 @@ export function EvalGraph({
   let line = ''
   let area = ''
   if (points.length >= 2) {
-    line = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ')
+    line = smoothPath(points)
     const first = points[0]
     const last = points[points.length - 1]
     area = `${line} L${last.x.toFixed(1)} ${height} L${first.x.toFixed(1)} ${height} Z`
   }
   const cursorX = (Math.min(currentPly, span) / span) * width
+  const cursorPoint = byPly.get(Math.min(currentPly, span))
 
   const select = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (!onSelectPly || series.length < 2) return
@@ -86,12 +88,21 @@ export function EvalGraph({
       >
         {width > 0 ? (
           <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
+            <defs>
+              <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" className="eval-graph-fill-top" />
+                <stop offset="1" className="eval-graph-fill-bottom" />
+              </linearGradient>
+            </defs>
             <rect x="0" y="0" width={width} height={height} className="eval-graph-bg" />
-            {area ? <path d={area} className="eval-graph-area" /> : null}
+            {area ? <path d={area} className="eval-graph-area" fill={`url(#${gradientId})`} /> : null}
             <line x1="0" x2={width} y1={mid} y2={mid} className="eval-graph-mid" />
             {line ? <path d={line} className="eval-graph-line" /> : null}
             {series.length > 1 ? (
               <line x1={cursorX} x2={cursorX} y1="0" y2={height} className="eval-graph-cursor" />
+            ) : null}
+            {series.length > 1 && cursorPoint ? (
+              <circle cx={cursorPoint.x} cy={cursorPoint.y} r={compact ? 3 : 3.5} className="eval-graph-dot" />
             ) : null}
             {markers.map((marker) => {
               const point = byPly.get(marker.ply)
