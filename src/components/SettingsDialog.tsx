@@ -1,7 +1,10 @@
-import { Settings2, Volume2, VolumeX } from 'lucide-react'
+import { Monitor, Moon, Settings2, Sun, Volume2, VolumeX } from 'lucide-react'
+import type { CSSProperties } from 'react'
 import type { BoardThemeId } from '../game/constants'
 import { BOARD_THEMES } from '../game/constants'
 import { PIECE_SETS, usePieceSet } from '../game/pieceSets'
+import { APPEARANCES } from '../lib/appearance'
+import type { Appearance } from '../lib/appearance'
 import { cx } from '../lib/cx'
 import { Modal } from './Modal'
 import { PieceArt } from './PieceArt'
@@ -12,6 +15,10 @@ interface SettingsDialogProps {
   onToggleSound: () => void
   volume: number
   onVolumeChange: (volume: number) => void
+  appearance: Appearance
+  onAppearanceChange: (value: Appearance) => void
+  reduceTransparency: boolean
+  onReduceTransparencyChange: (value: boolean) => void
   boardTheme: BoardThemeId
   onBoardThemeChange: (theme: BoardThemeId) => void
   showCoordinates: boolean
@@ -29,6 +36,10 @@ export function SettingsDialog({
   onToggleSound,
   volume,
   onVolumeChange,
+  appearance,
+  onAppearanceChange,
+  reduceTransparency,
+  onReduceTransparencyChange,
   boardTheme,
   onBoardThemeChange,
   showCoordinates,
@@ -44,7 +55,7 @@ export function SettingsDialog({
   return (
     <Modal
       title="Nastavení"
-      description="Zvuk, deska, figury a jemnost pohybu."
+      description="Vzhled, zvuk, deska, figury a jemnost pohybu."
       icon={<Settings2 size={19} />}
       onClose={onClose}
       size="md"
@@ -58,6 +69,45 @@ export function SettingsDialog({
       )}
     >
       <div className="settings-sections">
+        <section className="settings-section">
+          <div className="settings-section-head">
+            <h3>Vzhled</h3>
+          </div>
+          <div
+            className="mode-toggle mode-toggle--three appearance-toggle"
+            role="radiogroup"
+            aria-label="Vzhled aplikace"
+            style={{ '--i': Math.max(0, APPEARANCES.findIndex((option) => option.id === appearance)) } as CSSProperties}
+          >
+            {APPEARANCES.map((option) => {
+              const Icon = option.id === 'light' ? Sun : option.id === 'dark' ? Moon : Monitor
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={appearance === option.id}
+                  className={cx('mode-toggle-btn', appearance === option.id && 'is-selected')}
+                  onClick={() => onAppearanceChange(option.id)}
+                >
+                  <Icon size={15} aria-hidden="true" />
+                  <span>{option.label}</span>
+                </button>
+              )
+            })}
+          </div>
+          <SwitchRow
+            title="Omezit průhlednost"
+            description="Plné plochy místo skla. Klidnější a šetrnější k výkonu."
+          >
+            <Switch
+              checked={reduceTransparency}
+              onChange={onReduceTransparencyChange}
+              label="Omezit průhlednost"
+            />
+          </SwitchRow>
+        </section>
+
         <section className="settings-section">
           <div className="settings-section-head">
             <h3>Zvuk</h3>

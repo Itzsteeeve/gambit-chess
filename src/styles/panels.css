@@ -162,8 +162,8 @@
 }
 
 .player-clock.is-running {
-  background: var(--ivory);
-  color: var(--ink);
+  background: var(--clock-run-bg);
+  color: var(--clock-run-fg);
 }
 
 .player-clock.is-low {
@@ -592,7 +592,7 @@
 }
 
 .move-row:nth-child(even) {
-  background: rgb(255 255 255 / 0.025);
+  background: var(--zebra);
 }
 
 .move-number {
@@ -1490,7 +1490,7 @@
 }
 
 .review-bar-best {
-  color: var(--primary);
+  color: var(--good);
 }
 
 /* Secondary info yields first when the bar gets tight. */

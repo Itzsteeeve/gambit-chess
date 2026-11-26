@@ -1,0 +1,527 @@
+/* ==================================================================
+   Glass material layer
+   Maps components onto the three materials from tokens.css and draws the
+   ambient backdrop they float over. Loaded after the component sheets
+   (before responsive.css), so it only decides *material*: fills, blur,
+   edges, shadows and shape. Sizes and layout stay in their own sheets.
+
+   thin    — toolbar, review bar, clocks, toasts, ghost buttons
+   regular — header capsule, side panel, start card
+   thick   — dialogs, popovers, promotion picker, tooltips
+   ================================================================== */
+
+/* ------------------------------------------------------------------ */
+/* Ambient backdrop                                                   */
+/* ------------------------------------------------------------------ */
+
+body {
+  background: var(--bg);
+  transition: background-color 300ms var(--ease-out);
+}
+
+.app {
+  isolation: isolate;
+  background: transparent;
+}
+
+/* Soft colour fields under everything. Static: nothing loops. */
+.app::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(42% 52% at 8% 12%, var(--ambient-1), transparent 72%),
+    radial-gradient(38% 48% at 94% 8%, var(--ambient-3), transparent 72%),
+    radial-gradient(48% 58% at 78% 96%, var(--ambient-2), transparent 72%),
+    radial-gradient(32% 40% at 22% 92%, var(--ambient-4), transparent 72%),
+    var(--bg);
+}
+
+/* ------------------------------------------------------------------ */
+/* Materials                                                          */
+/* ------------------------------------------------------------------ */
+
+.header-inner,
+.side-panel-inner,
+.start-card,
+.board-toolbar,
+.toast,
+.modal-panel,
+.level-popover,
+.promotion-picker {
+  -webkit-backdrop-filter: blur(var(--glass-blur-regular)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur-regular)) saturate(var(--glass-saturate));
+  box-shadow: var(--glass-highlight), var(--glass-shadow);
+}
+
+/* Anchor for the edge ring (popover and picker are already positioned). */
+.header-inner,
+.side-panel-inner,
+.start-card,
+.board-toolbar,
+.toast {
+  position: relative;
+}
+
+/* regular */
+.header-inner,
+.side-panel-inner,
+.start-card {
+  background: var(--glass-regular);
+}
+
+/* thin */
+.board-toolbar,
+.toast {
+  background: var(--glass-thin);
+  -webkit-backdrop-filter: blur(var(--glass-blur-thin)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur-thin)) saturate(var(--glass-saturate));
+  box-shadow: var(--glass-highlight), var(--glass-shadow-sm);
+}
+
+/* thick */
+.modal-panel,
+.level-popover,
+.promotion-picker {
+  background: var(--glass-thick);
+  -webkit-backdrop-filter: blur(var(--glass-blur-thick)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur-thick)) saturate(var(--glass-saturate));
+}
+
+/* Light edge: brighter at the top, fading towards the bottom, drawn as a
+   1px ring with a mask so the fill underneath stays translucent. */
+.header-inner::before,
+.side-panel-inner::before,
+.start-card::before,
+.board-toolbar::before,
+.toast::before,
+.modal-panel::before,
+.level-popover::before,
+.promotion-picker::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(180deg, var(--glass-edge-top), var(--glass-edge-bottom) 60%);
+  pointer-events: none;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+}
+
+/* No backdrop-filter support: fall back to the opaque surfaces. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root {
+    --glass-thin: var(--surface-solid);
+    --glass-regular: var(--surface);
+    --glass-thick: var(--surface-solid);
+  }
+}
+
+/* Liquid refraction: Chromium only (html.liquid is set in main.tsx), on the
+   floating toolbar alone so the cost stays small. */
+.liquid .board-toolbar {
+  -webkit-backdrop-filter: url(#liquid-glass) blur(var(--glass-blur-thin)) saturate(var(--glass-saturate));
+  backdrop-filter: url(#liquid-glass) blur(var(--glass-blur-thin)) saturate(var(--glass-saturate));
+}
+
+[data-transparency='reduced'] .liquid .board-toolbar,
+[data-transparency='reduced'].liquid .board-toolbar {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/* ------------------------------------------------------------------ */
+/* Header: a floating capsule                                         */
+/* ------------------------------------------------------------------ */
+
+.app-header {
+  padding: 10px var(--page-pad-x) 0;
+  border-bottom: 0;
+  background: transparent;
+}
+
+.header-inner {
+  padding: 0 var(--space-2) 0 var(--space-4);
+  border-radius: var(--radius-pill);
+}
+
+.header-divider {
+  background: var(--line-strong);
+}
+
+.new-game-button {
+  padding: 0 var(--space-4);
+}
+
+/* ------------------------------------------------------------------ */
+/* Board                                                              */
+/* ------------------------------------------------------------------ */
+
+/* The board is solid; a thin glass bezel and a deep shadow lift it off
+   the backdrop. */
+.board-area > .board-frame,
+.start-preview {
+  box-shadow:
+    0 0 0 1px var(--glass-edge-top),
+    0 0 0 5px var(--glass-thin),
+    var(--board-shadow);
+}
+
+.start-preview {
+  border-radius: var(--radius-board);
+  opacity: 1;
+}
+
+.eval-bar {
+  border-radius: var(--radius-pill);
+  box-shadow:
+    0 0 0 1px var(--line-strong),
+    var(--glass-shadow-sm);
+}
+
+.promotion-backdrop {
+  background: var(--overlay);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+
+.promotion-picker {
+  border-radius: var(--radius-md);
+}
+
+.promotion-option:hover {
+  background: var(--hover-wash);
+}
+
+/* ------------------------------------------------------------------ */
+/* Player strips                                                      */
+/* ------------------------------------------------------------------ */
+
+.player-avatar {
+  border-radius: var(--radius-md);
+  background: var(--glass-thin);
+  box-shadow: var(--glass-highlight), 0 0 0 1px var(--line);
+}
+
+.player-clock {
+  border-radius: var(--radius-pill);
+  background: var(--glass-thin);
+  -webkit-backdrop-filter: blur(var(--glass-blur-thin)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur-thin)) saturate(var(--glass-saturate));
+  box-shadow: var(--glass-highlight), 0 0 0 1px var(--line);
+}
+
+.player-clock.is-running {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.4),
+    var(--glass-shadow-sm);
+}
+
+/* ------------------------------------------------------------------ */
+/* Toolbar + review bar: one floating capsule                         */
+/* ------------------------------------------------------------------ */
+
+.board-toolbar {
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-pill);
+}
+
+.toolbar-divider {
+  background: var(--line-strong);
+}
+
+.toolbar-text-button,
+.toolbar-result-button,
+.icon-button,
+.text-action,
+.level-trigger,
+.brand--button {
+  border-radius: var(--radius-pill);
+}
+
+.board-toolbar .icon-button,
+.board-toolbar .toolbar-text-button {
+  height: var(--control-md);
+}
+
+/* ------------------------------------------------------------------ */
+/* Side panel                                                         */
+/* ------------------------------------------------------------------ */
+
+.side-panel-inner {
+  border-radius: var(--radius-lg);
+}
+
+/* Tabs become an iOS-style segmented control. */
+.side-tabs {
+  margin: var(--space-3) var(--space-3) var(--space-1);
+  padding: 3px;
+  gap: 2px;
+  border-bottom: 0;
+  border-radius: var(--radius-pill);
+  background: var(--well);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.side-tab {
+  height: 32px;
+  border-radius: var(--radius-pill);
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+
+.side-tab::after {
+  display: none;
+}
+
+.side-tab.is-active {
+  background: var(--glass-tint-strong);
+  box-shadow:
+    var(--glass-highlight),
+    0 0 0 1px var(--line),
+    0 2px 8px -2px rgb(0 0 0 / 0.25);
+}
+
+/* Rows scroll under a frosted column header. */
+.moves-table-header {
+  border-bottom-color: var(--line);
+  background: transparent;
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  backdrop-filter: blur(14px) saturate(160%);
+}
+
+.move-cell {
+  border-radius: var(--radius-sm);
+}
+
+/* ------------------------------------------------------------------ */
+/* Buttons                                                            */
+/* ------------------------------------------------------------------ */
+
+.button {
+  border-radius: var(--radius-pill);
+}
+
+/* Primary: a lit pill — top sheen, soft coloured shadow. */
+.button--primary,
+.button--primary:hover:not(:disabled),
+.button--primary:active:not(:disabled),
+.toolbar-result-button,
+.toolbar-result-button:hover,
+.button--danger,
+.button--danger:hover:not(:disabled) {
+  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.22), rgb(255 255 255 / 0) 60%);
+}
+
+.button--primary,
+.toolbar-result-button {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.3),
+    0 8px 20px -10px rgb(var(--primary-rgb) / 0.9);
+}
+
+.button--danger {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.25),
+    0 8px 20px -10px rgb(var(--danger-rgb) / 0.9);
+}
+
+/* Ghost: a sheet of thin glass. */
+.button--ghost {
+  border-color: var(--line-strong);
+  background: var(--glass-thin);
+  -webkit-backdrop-filter: blur(var(--glass-blur-thin)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur-thin)) saturate(var(--glass-saturate));
+  box-shadow: var(--glass-highlight);
+}
+
+.button--ghost:hover:not(:disabled) {
+  background: var(--surface-3);
+}
+
+/* Press: glass gives a little, then springs back. */
+.button,
+.toolbar-text-button,
+.toolbar-result-button {
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out),
+    transform 220ms var(--ease-spring);
+}
+
+.button:active:not(:disabled),
+.toolbar-text-button:active:not(:disabled),
+.toolbar-result-button:active {
+  transform: scale(0.96);
+  transition-duration: var(--dur-press);
+}
+
+/* Tooltips: small thick glass. */
+.icon-button::after {
+  border-radius: var(--radius-sm);
+  background: var(--glass-thick);
+  -webkit-backdrop-filter: blur(var(--glass-blur-thin)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur-thin)) saturate(var(--glass-saturate));
+  box-shadow:
+    var(--glass-highlight),
+    0 0 0 1px var(--line),
+    var(--shadow-pop);
+}
+
+kbd {
+  border-color: var(--line-strong);
+  background: var(--glass-thin);
+}
+
+/* ------------------------------------------------------------------ */
+/* Controls                                                           */
+/* ------------------------------------------------------------------ */
+
+/* iOS switch: wide pill, white thumb with a soft shadow. */
+.switch {
+  width: 46px;
+  height: 28px;
+  background: var(--surface-3);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.switch-thumb {
+  top: 2px;
+  left: 2px;
+  width: 24px;
+  height: 24px;
+  background: #ffffff;
+  box-shadow:
+    0 2px 6px rgb(0 0 0 / 0.25),
+    0 0 0 0.5px rgb(0 0 0 / 0.06);
+  transition:
+    transform 260ms var(--ease-spring),
+    width var(--dur-fast) var(--ease-out);
+}
+
+.switch.is-on {
+  box-shadow: none;
+}
+
+.switch.is-on .switch-thumb {
+  background: #ffffff;
+  transform: translateX(18px);
+}
+
+.switch:active .switch-thumb {
+  width: 28px;
+}
+
+.switch.is-on:active .switch-thumb {
+  transform: translateX(14px);
+}
+
+/* Segmented controls: pill track, raised glass thumb. */
+.mode-toggle {
+  border-radius: var(--radius-pill);
+}
+
+.mode-toggle::before {
+  border-radius: var(--radius-pill);
+  background: var(--glass-tint-strong);
+  box-shadow:
+    var(--glass-highlight),
+    0 0 0 1px var(--line),
+    0 2px 8px -2px rgb(0 0 0 / 0.25);
+}
+
+.mode-toggle-btn {
+  border-radius: var(--radius-pill);
+}
+
+.appearance-toggle {
+  margin-bottom: var(--space-2);
+}
+
+input[type='range']::-webkit-slider-thumb {
+  width: 20px;
+  height: 20px;
+  margin-top: -8px;
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.3);
+}
+
+input[type='range']::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.3);
+}
+
+/* ------------------------------------------------------------------ */
+/* Dialogs, popovers, toasts                                          */
+/* ------------------------------------------------------------------ */
+
+.modal-backdrop {
+  -webkit-backdrop-filter: blur(6px) saturate(120%);
+  backdrop-filter: blur(6px) saturate(120%);
+}
+
+[data-transparency='reduced'] .modal-backdrop {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.modal-panel {
+  border-radius: var(--radius-xl);
+}
+
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.modal-backdrop:not([data-state='closing']) .modal-panel {
+  animation-timing-function: var(--ease-spring);
+}
+
+.level-popover {
+  border: 0;
+  border-radius: var(--radius-lg);
+}
+
+.level-option {
+  border-radius: var(--radius-md);
+}
+
+.toast {
+  border-radius: var(--radius-pill);
+}
+
+/* ------------------------------------------------------------------ */
+/* Start screen                                                       */
+/* ------------------------------------------------------------------ */
+
+.start-card {
+  padding: var(--space-8);
+  border-radius: var(--radius-xl);
+}
+
+.start-title {
+  font-family: var(--font-display);
+  letter-spacing: -0.03em;
+}

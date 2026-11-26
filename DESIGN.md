@@ -1,14 +1,17 @@
 # Gambit — design
 
-The board is the product; everything around it is a quiet console. `src/styles/tokens.css` is the single source of truth — this file only states the rules.
+The board is the product; everything around it is quiet glass. `src/styles/tokens.css` is the single source of truth — this file only states the rules.
 
 ## Principles
 
-- **Flat surfaces.** Shell `--bg`, one surface `--surface` for panels and dialogs, `--surface-2/3` for controls and selected states. Separation by hairlines (`--line`), not by nested cards. No card-in-card, no glows, no gradients on chrome, no backdrop blur.
-- **One green.** `--primary` (#81b64c) marks the primary action, selection and progress. Other accents have one job each: `--gold` winner + brand, `--amber` hints, `--danger` destructive / check / low time, `--premove` (cool blue) premoves only. Move-quality tones (`--tone-*`) appear only as small dots/badges.
-- **Type scale 12 / 13 / 15 / 20** (`--fs-xs/sm/md/lg`), plus 28/40 for display numbers. Sentence case; the only uppercase labels are the move-list column headers.
-- **Tokens only.** Colours, radii (`--radius-sm/md/lg`), spacing (4 px grid, `--space-*`), durations and easings come from tokens; board themes are `[data-theme]` token sets (emerald, walnut, midnight, blush, slate).
-- **Motion is functional and short.** Moves 210–380 ms by distance (the piece lifts while it glides, knights higher), arrows fade in once (140 ms), flip 260 ms, dialogs 200 ms in / 160 ms out, presses 100 ms. Nothing loops except the "thinking" dots. A move rating "lands" once with its own gesture (`ratings.css`); only brilliant and great add rings, a flat wash over the coach and a board effect, all under 1.1 s. `html[data-motion='off']` and `prefers-reduced-motion` reduce everything to instant (dialogs then close without waiting).
+- **Glass over a solid board.** The board is opaque; everything around it is glass floating over a static ambient backdrop (`.app::before`, colour fields `--ambient-1..4`). Three materials, all tokens: `thin` (toolbar/review bar capsule, clocks, toasts, ghost buttons), `regular` (header capsule, side panel, start card), `thick` (dialogs, popovers, promotion picker, tooltips). Each has a fill, a backdrop blur + saturate, a 1px top-lit edge ring (masked `::before`) and a soft shadow. Mapping lives in `src/styles/glass.css`; no glass inside glass — sections within a panel use tone and hairlines.
+- **Two appearances.** `html[data-appearance='dark'|'light']` switches every colour token; `gambit.appearance` is `system | light | dark` (`lib/appearance.ts`, pre-paint script in `index.html`). `html[data-transparency='reduced']` (setting or `prefers-reduced-transparency`) and browsers without `backdrop-filter` get opaque surfaces.
+- **One blue for the UI, green for chess.** `--primary` (system blue) marks the primary action, selection, switches and progress. `--good` (green) is chess meaning only: best move, default arrows. `--gold` winner + brand, `--amber` hints, `--danger` destructive / check / low time, `--premove` (violet) premoves only. Move-quality tones (`--tone-*`) appear only as small dots/badges.
+- **Shape.** Pills for buttons, segmented controls, tabs, clocks and the toolbar; radii 8 / 12 / 22 / 30 (`--radius-sm/md/lg/xl`), board `--radius-board`. Primary buttons are lit pills (top sheen, coloured shadow).
+- **Type scale 12 / 13 / 15 / 20** (`--fs-xs/sm/md/lg`), plus 30/44 for display numbers. System font (SF Pro on Apple), Inter elsewhere. Sentence case; the only uppercase labels are the move-list column headers.
+- **Tokens only.** Colours, radii, spacing (4 px grid), durations and easings come from `tokens.css`; board themes are `[data-theme]` token sets (emerald, walnut, midnight, blush, slate, frost) independent of the appearance.
+- **Liquid refraction** (`html.liquid`, Chromium only) bends the backdrop of the floating toolbar through the `#liquid-glass` SVG filter. Elsewhere it is plain blur; never add it to things that move.
+- **Motion is functional and short.** Moves 210–380 ms by distance (the piece lifts while it glides, knights higher), arrows fade in once (140 ms), flip 260 ms, dialogs 200 ms in (spring) / 160 ms out, presses spring back (`--ease-spring`). Nothing loops except the "thinking" dots. A move rating "lands" once with its own gesture (`ratings.css`); only brilliant and great add rings, a flat wash over the coach and a board effect, all under 1.1 s. `html[data-motion='off']` and `prefers-reduced-motion` reduce everything to instant (dialogs then close without waiting).
 
 ## Layout
 

@@ -34,7 +34,7 @@ export function opposite(color: Color): Color {
   return color === 'w' ? 'b' : 'w'
 }
 
-export type BoardThemeId = 'emerald' | 'walnut' | 'midnight' | 'blush' | 'slate'
+export type BoardThemeId = 'emerald' | 'walnut' | 'midnight' | 'blush' | 'slate' | 'frost'
 
 export interface BoardTheme {
   id: BoardThemeId
@@ -48,6 +48,7 @@ export const BOARD_THEMES: BoardTheme[] = [
   { id: 'midnight', name: 'Půlnoc', description: 'Chladná ocel' },
   { id: 'blush', name: 'Růženín', description: 'Měkký kámen' },
   { id: 'slate', name: 'Břidlice', description: 'Chladný kámen' },
+  { id: 'frost', name: 'Mráz', description: 'Led pod sklem' },
 ]
 
 /** Player colour choice in the New Game dialog. */

@@ -65,6 +65,8 @@ import type { ClockSnapshot } from './game/useChessClock'
 import { useChessGame } from './game/useChessGame'
 import { useEngineAnalysis, useStockfishPlay } from './game/useStockfish'
 import { copyText } from './lib/clipboard'
+import { isAppearance, useApplyAppearance } from './lib/appearance'
+import type { Appearance } from './lib/appearance'
 import { useSound } from './lib/useSound'
 import { useSpeech } from './lib/useSpeech'
 import { isBoolean, isOneOf, useStoredState } from './lib/storage'
@@ -145,6 +147,13 @@ export default function App() {
     'emerald',
     isBoardTheme,
   )
+  const [appearance, setAppearance] = useStoredState<Appearance>('gambit.appearance', 'system', isAppearance)
+  const [reduceTransparency, setReduceTransparency] = useStoredState(
+    'gambit.reduce-transparency',
+    false,
+    isBoolean,
+  )
+  useApplyAppearance(appearance, reduceTransparency)
   const [showCoordinates, setShowCoordinates] = useStoredState('gambit.coordinates', true, isBoolean)
   const [animations, setAnimations] = useStoredState('gambit.animations', true, isBoolean)
   const [storedTempo, setStoredTempo] = useStoredState('gambit.tempo', 'none', isTempoId)
@@ -1461,6 +1470,14 @@ export default function App() {
 
   return (
     <div className="app">
+      <svg className="svg-defs" aria-hidden="true" focusable="false">
+        {/* Soft, low-frequency displacement: the toolbar glass bends what is behind it. */}
+        <filter id="liquid-glass" x="0" y="0" width="100%" height="100%" colorInterpolationFilters="sRGB">
+          <feTurbulence type="fractalNoise" baseFrequency="0.006 0.02" numOctaves={2} seed={7} result="noise" />
+          <feGaussianBlur in="noise" stdDeviation="2" result="soft" />
+          <feDisplacementMap in="SourceGraphic" in2="soft" scale={28} xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+      </svg>
       <PieceDefs />
 
       <Header
@@ -1717,6 +1734,10 @@ export default function App() {
           onToggleSound={toggleSound}
           volume={sound.volume}
           onVolumeChange={sound.setVolume}
+          appearance={appearance}
+          onAppearanceChange={setAppearance}
+          reduceTransparency={reduceTransparency}
+          onReduceTransparencyChange={setReduceTransparency}
           boardTheme={boardTheme}
           onBoardThemeChange={setBoardTheme}
           showCoordinates={showCoordinates}

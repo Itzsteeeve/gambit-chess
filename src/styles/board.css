@@ -6,7 +6,7 @@
   position: relative;
   width: 100%;
   aspect-ratio: 1 / 1;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-board);
   background: var(--board-dark);
 }
 
@@ -15,7 +15,7 @@
   width: 100%;
   height: 100%;
   overflow: hidden;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-board);
   background: var(--board-light);
   touch-action: none;
   user-select: none;
@@ -655,7 +655,7 @@
  */
 /* The whole arrow appears at once, in a single short fade. */
 .board-arrow {
-  --tone: var(--primary-rgb);
+  --tone: var(--good-rgb);
   opacity: 0.86;
   filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.3));
   animation: arrow-in 140ms var(--ease-out) backwards;
@@ -680,7 +680,7 @@
 }
 
 .board-tone--green {
-  --tone: var(--primary-rgb);
+  --tone: var(--good-rgb);
 }
 
 .board-tone--red {
@@ -709,7 +709,7 @@
 /* No own --tone: it would override the .board-tone--* class on the same element. */
 .board-mark {
   fill: none;
-  stroke: rgb(var(--tone, var(--primary-rgb)) / 0.85);
+  stroke: rgb(var(--tone, var(--good-rgb)) / 0.85);
   stroke-width: 7;
   animation: fade-in 120ms var(--ease-out) both;
 }
