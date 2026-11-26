@@ -1,5 +1,5 @@
 import type { Color } from 'chess.js'
-import { Dumbbell, Import, Play, SlidersHorizontal, Users } from 'lucide-react'
+import { Dumbbell, Globe, Import, Play, SlidersHorizontal, Users } from 'lucide-react'
 import type { BoardThemeId } from '../game/constants'
 import { getDisplayPosition } from '../game/pieces'
 import type { GamePiece } from '../game/pieces'
@@ -21,6 +21,9 @@ interface StartScreenProps {
   onLocal: () => void
   onImport: () => void
   onTrain: () => void
+  onOnline: () => void
+  /** An online game is running in the background. */
+  onlineInGame?: boolean
   /** Unsolved training puzzles. */
   openPuzzles: number
 }
@@ -41,6 +44,8 @@ export function StartScreen({
   onLocal,
   onImport,
   onTrain,
+  onOnline,
+  onlineInGame = false,
   openPuzzles,
 }: StartScreenProps) {
   return (
@@ -97,6 +102,10 @@ export function StartScreen({
               Nová partie se stejným nastavením
             </button>
           ) : null}
+          <button type="button" className="button button--ghost start-online" onClick={onOnline}>
+            <Globe size={17} />
+            {onlineInGame ? 'Zpět k online partii' : 'Hrát online'}
+          </button>
           <div className="start-secondary">
             <button type="button" className="text-action" onClick={onCustomize}>
               <SlidersHorizontal size={15} />

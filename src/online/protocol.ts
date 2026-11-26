@@ -77,6 +77,8 @@ export interface RoomView {
   id: string
   code: string
   visibility: Visibility
+  /** Opened by quick pairing: starts by itself once an opponent arrives. */
+  quick: boolean
   timeControlId: OnlineTimeControlId
   hostId: string
   players: RoomPlayer[]

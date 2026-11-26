@@ -23,7 +23,8 @@ interface MoveListProps {
   opening?: string
   onCopyPgn: () => void
   onCopyFen: () => void
-  onImport: () => void
+  /** Omitted where importing makes no sense (online games). */
+  onImport?: () => void
   /** The game began from a custom position, so the usual opening advice is dropped. */
   customStart?: boolean
   /** Optional column header labels (default: Bílý / Černý). */
@@ -210,10 +211,12 @@ export function MoveList({
           <span>FEN</span>
           <Copy size={13} className="copy-icon" />
         </button>
-        <button type="button" className="copy-button" onClick={onImport} aria-label="Importovat partii">
-          <Import size={15} />
-          <span>Import</span>
-        </button>
+        {onImport ? (
+          <button type="button" className="copy-button" onClick={onImport} aria-label="Importovat partii">
+            <Import size={15} />
+            <span>Import</span>
+          </button>
+        ) : null}
       </div>
     </div>
   )

@@ -430,6 +430,7 @@ export class RoomManager {
       id: room.id,
       code: room.code,
       visibility: room.visibility,
+      quick: room.quick,
       timeControlId: room.timeControlId,
       hostId: room.hostId,
       players: room.playerIds.map((id) => {

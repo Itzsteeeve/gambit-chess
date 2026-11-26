@@ -23,6 +23,8 @@ export interface ImportedGame {
   outcome: GameOutcome
   /** The text held more games; only the first one was read. */
   hasMoreGames: boolean
+  /** A finished online game opened for review. */
+  online?: boolean
 }
 
 export type ImportResult =

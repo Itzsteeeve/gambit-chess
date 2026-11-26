@@ -18,6 +18,7 @@ import { ImportDialog } from './components/ImportDialog'
 import type { ImportedContent } from './components/ImportDialog'
 import { MoveClassificationDialog } from './components/MoveClassificationDialog'
 import { NewGameDialog } from './components/NewGameDialog'
+import { OnlineScreen } from './components/OnlineScreen'
 import type { NewGameSettings } from './components/NewGameDialog'
 import { PieceDefs } from './components/PieceDefs'
 import { PlayerStrip } from './components/PlayerStrip'
@@ -72,9 +73,11 @@ import { useSound } from './lib/useSound'
 import { useSpeech } from './lib/useSpeech'
 import { isBoolean, isOneOf, useStoredState } from './lib/storage'
 import { useToasts } from './lib/useToasts'
+import { normalizeRoomCode } from './online/protocol'
+import { hasOnlineIdentity, useOnline } from './online/useOnline'
 
 type DialogId = 'new' | 'position' | 'import' | 'settings' | 'resign' | 'draw' | 'ratings' | null
-type Screen = 'home' | 'game' | 'training'
+type Screen = 'home' | 'game' | 'training' | 'online'
 
 interface CoachDemo {
   /** Index of the discussed move in the history. */
@@ -177,7 +180,40 @@ export default function App() {
   const restoringSessionRef = useRef(initialSession !== null)
   const pendingClockRestoreRef = useRef<ClockSnapshot | null>(initialSession?.clock ?? null)
 
-  const [screen, setScreen] = useState<Screen>(() => (initialSession ? 'game' : 'home'))
+  /** Room code from an invite link (`?room=ABCDE`). */
+  const [inviteCode, setInviteCode] = useState<string | null>(() => {
+    try {
+      const code = new URLSearchParams(window.location.search).get('room')
+      return code ? normalizeRoomCode(code) || null : null
+    } catch {
+      return null
+    }
+  })
+  const [screen, setScreen] = useState<Screen>(() => (inviteCode ? 'online' : initialSession ? 'game' : 'home'))
+  /** Once online play was opened, the connection stays up (a running game must not be abandoned). */
+  // A returning online player reconnects at once, so a game interrupted by a reload resumes.
+  const [onlineUsed, setOnlineUsed] = useState(() => screen === 'online' || hasOnlineIdentity())
+  const online = useOnline(onlineUsed)
+  /** Brings the player back to a running online game they were in (once per game). */
+  const resumedRoundRef = useRef<string | null>(null)
+  useEffect(() => {
+    const room = online.room
+    if (!room || room.status !== 'playing') return
+    const key = `${room.id}:${room.round}`
+    if (resumedRoundRef.current === key) return
+    resumedRoundRef.current = key
+    if (screen === 'home') setScreen('online')
+  }, [online.room, screen])
+  const clearInvite = useCallback(() => {
+    setInviteCode(null)
+    try {
+      const url = new URL(window.location.href)
+      url.searchParams.delete('room')
+      window.history.replaceState(null, '', url)
+    } catch {
+      // ignore
+    }
+  }, [])
   /** Colour the human plays against Stockfish in the current game. */
   const [humanColor, setHumanColor] = useState<Color>(() => initialSession?.humanColor ?? 'w')
   const engineColor = opposite(humanColor)
@@ -943,19 +979,23 @@ export default function App() {
 
   /** Puts an imported record on the board, in review from its first position. */
   const openRecord = useCallback(
-    (record: ImportedGame) => {
+    (record: ImportedGame, viewAs: Color = 'w') => {
       const untimed = getTimeControl('none')
       setTimeControl(untimed)
-      setHumanColor('w')
+      setHumanColor(viewAs)
       setGameHandicap('none')
       setPositionStart(null)
       setImported(record)
-      setOrientation('w')
+      setOrientation(viewAs)
       game.load(record)
       enterGame(untimed)
       setReviewPly(0)
       showToast(
-        record.hasMoreGames ? 'Text obsahoval víc partií, načetla se první.' : 'Partie importována',
+        record.online
+          ? 'Rozbor partie: Stockfish teď projde všechny tahy'
+          : record.hasMoreGames
+            ? 'Text obsahoval víc partií, načetla se první.'
+            : 'Partie importována',
       )
     },
     [enterGame, game, setOrientation, showToast],
@@ -1152,6 +1192,8 @@ export default function App() {
 
       const anyDialog = dialog !== null || gameOverOpen || Boolean(promotion)
       if (anyDialog) return
+      // Online play has its own controls; only the sound toggle stays global.
+      if (screen === 'online' && event.key !== 'm' && event.key !== 'M') return
       if (event.key === 'n' || event.key === 'N') {
         event.preventDefault()
         openNewGame()
@@ -1610,6 +1652,19 @@ export default function App() {
           onSound={playSound}
           onExit={goHome}
         />
+      ) : screen === 'online' ? (
+        <OnlineScreen
+          online={online}
+          inviteCode={inviteCode}
+          onInviteUsed={clearInvite}
+          boardTheme={boardTheme}
+          showCoordinates={showCoordinates}
+          animations={animations}
+          onSound={playSound}
+          onToast={showToast}
+          onAnalyze={openRecord}
+          onExit={goHome}
+        />
       ) : screen === 'home' ? (
         <main className="app-main app-main--home">
           <StartScreen
@@ -1625,6 +1680,11 @@ export default function App() {
             onLocal={() => startNewGame({ ...lastSettings, mode: 'human', handicap: 'none' })}
             onImport={openImport}
             onTrain={() => openTraining(null)}
+            onOnline={() => {
+              setOnlineUsed(true)
+              setScreen('online')
+            }}
+            onlineInGame={Boolean(online.room && online.room.status === 'playing')}
             openPuzzles={puzzles.filter((puzzle) => !puzzle.solved).length}
           />
         </main>
@@ -1767,7 +1827,7 @@ export default function App() {
               />
             }
             modeLabel={
-              imported ? 'Importovaná partie' : isEngineGame ? 'Proti Stockfishi' : 'Dva hráči lokálně'
+              imported?.online ? 'Online partie' : imported ? 'Importovaná partie' : isEngineGame ? 'Proti Stockfishi' : 'Dva hráči lokálně'
             }
             engineLabel={
               imported

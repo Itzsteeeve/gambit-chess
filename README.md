@@ -1,6 +1,6 @@
 # Gambit
 
-Chess in the browser. Play against Stockfish 19 (from 250 Elo up to full strength) or two players on one board. Everything runs locally in the browser: no server, no account. The UI is in Czech.
+Chess in the browser. Play against Stockfish 19 (from 250 Elo up to full strength) or two players on one board. Everything except online play runs locally in the browser: no account. The UI is in Czech.
 
 ## Versions
 
@@ -15,6 +15,7 @@ New offline features go to `main` first and are merged into `server`.
 
 - **Play vs Stockfish**: 14 levels (250–2800 Elo plus "Max"); picking another level in the header immediately starts a new game. Choose your colour (White / Black / random); when you play Black, Stockfish moves first and the board turns towards you. Optional **handicap**: Stockfish starts without its f-pawn, a knight, a rook or its queen (custom start position; the PGN carries `[SetUp]` and `[FEN]` headers).
 - **Two players locally** on one device.
+- **Online play** ("Hrát online" on the start screen): pick a nickname (no account), then **Quick game** (pairs you with someone waiting for the same time control, or opens a room for you), **create a room** (public, listed in the lobby, or private with a code and invite link `…/chess/?room=CODE`) or join one from the live lobby list. The host starts the game; colours are drawn at random. The server checks every move and runs the clocks; Stockfish stays off during the game. Draw offers, resign, rematch with swapped colours; a game without a first move in 30 s is aborted, a player disconnected for 60 s loses. After the game, **Rozbor partie** opens it in the full review (coach, accuracy, graph). A reload returns you to your running game.
 - **Start screen**: "Play" starts immediately with your last settings, "Customize" opens the new-game dialog, plus "Two players locally". Clicking the logo goes home.
 - **Hints** (first click selects a piece, second click shows the move arrow) and a **coach**: every move you make is rated (brilliant … blunder) with accuracy, and explained in Czech: why it is good or bad (hanging piece, fork, mate, lost or missed material, opening principles) and what was better. A concrete reason is only given when both the board and the engine line support it; otherwise the coach just names the better move.
 - **Coach demonstrations**: "Ukaž problém" draws the punishing reply, "Lepší tah" shows the better move; the engine and the clocks wait meanwhile. "Zkusit znovu" takes a bad move back.
